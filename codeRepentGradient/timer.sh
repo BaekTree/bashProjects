@@ -23,12 +23,12 @@ updateVerses(){
 }
 
 genVerseIDx(){
-    updateVerses
     idxV=$(( $RANDOM % ${#vArr[@]} ))
 }
 
 viewVerse(){
     genVerseIDx
+    echo "opening ${vArr[${idxV}]}"
     open -a Preview "/Users/baek/OneDrive/사진/삼성 갤러리/Pictures/Bible/${vArr[${idxV}]}"
     # $(sleep 10 || echo 10 passed!) &
     sleep 1
@@ -194,13 +194,13 @@ init(){
         contArr+=(${!c})
     done
     IFS=$priorIFS
-    # echo $str
-    # echo
-    # echo $str2
-    # echo
+
+
+
+<< "GATE"
+open the gate with a dialog
+GATE
     apple_dialog $rules
-
-
     while [ "$ans" = "No" ]
     do
         apple_dialog "GOD LOVES YOU\nJesus has secrificed himself for you\n\n\n\n\n"${str}
@@ -228,7 +228,7 @@ init(){
     # record "\n\n\n\n\n\n\n-"
 
     # append time and msg
-    record "$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y) "
+    record "\n\n\n\n\n\n\n$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y) "
 
 
 
@@ -257,7 +257,7 @@ init(){
 
     echo "Enter Rule 2"
     apple_text "${rule2}\n${cont2}"
-    record $ans
+    echo $ans
     record $msg
     limit=20
     while [ "$ans" = "No" -o ${#msg} -lt ${limit} ]
@@ -275,7 +275,7 @@ init(){
 
     echo "Enter Rule 3"
     apple_text "${rule3}\n${cont3}"
-    record $ans
+    echo $ans
     record $msg
     limit=10
     while [ "$ans" = "No" -o ${#msg} -lt 10 ]
@@ -295,7 +295,7 @@ init(){
 
     echo "Enter Question"
     apple_text "${rule4}\n${cont4}"
-    record $ans
+    echo $ans
     record $msg
     limit=10
     while [ "$ans" = "No" -o ${#msg} -lt 10 ]
@@ -304,7 +304,7 @@ init(){
         apple_text ${alrt}${warn}${rule4}
     done
 
-    record echo $msg
+    echo $msg
 
 
 
@@ -312,7 +312,7 @@ init(){
     echo "Enter Rule 5"
     # echo "Enter Question"
     apple_text "${rule5}\n${cont5}"
-    record $ans
+    echo $ans
     record $msg
     limit=10
     while [ "$ans" = "No" -o ${#msg} -lt 10 ]
@@ -321,7 +321,7 @@ init(){
         apple_text ${alrt}${warn}${rule5}\n${cont5}
     done
 
-    record echo $msg
+    echo $msg
 
 
 
@@ -360,13 +360,15 @@ echo -e "\n\n\n\n$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y
 WAIT
 
 
-baseMin=60
-base=$(( $baseMin * 60 ))
-var=$(( base / 4 ))
+# baseMin=60
+# base=$(( $baseMin * 60 ))
+# var=$(( base / 4 ))
+# # variance test
+# limitT=$(( $base + $RANDOM % $var )) 
 
-# variance test
-limitT=$(( $base + $RANDOM % $var )) 
-# echo "wait ${limitT} seconds"
+baseMin=61
+limitT=$(( $baseMin * 60 ))
+echo "wait ${limitT} seconds"
 
 mins=$(( $limitT / 60 ))
 # echo $mins
@@ -377,246 +379,52 @@ sec=$(( $limitT - $hours * 3600 - $mins * 60 ))
 
 echo $hours:$mins:$sec left
 
-leftOver=$(( limitT % 3600 ))
-sleep $leftOver
+if [ $limitT -gt 3600 ]
+then
+    fewHours=$(( $limitT / 3600 ))
+    leftOver=$(( $limitT % 3600 ))
+    sleep $leftOver
+    echo $fewHours hours left.
 
+    while [ $fewHours -gt 1 ]
+    do
+        sleep 3600
+        $(( fewHours-- ))
+        echo $fewHours hours left.
+    done
 
+    limitT=$(( $fewHours * 3600 ))
+    echo "checkout limitT=$limitT"
+fi
 
-
-while [ hours -gt 1 ]
-do
-    echo $hours left
-    sleep 3600
-    $(( hours-- ))
-done
-
-arr(30 20 5 4)
-
-echo 60 mins left
+#MINUTES
+arr=(50 40 30 20 10 5 4 3 2 1)
 
 for (( i=0; i<${#arr[@]}; i++ ))
 do
-    
-done
-
-
-<< "TIME"
-30분 뒤
-10분 뒤
-5분 뒤
-1분 뒤
-30 초 뒤
-10초 부터 카운트
-
-단위는 모두 초 이다.
-mins * 60을 하면 초가 된다.
-
-limitT - 30분을 남긴 시간 까지 잠을 잔다.
-30분 남은 시간까지 계산.
-limitT - 30 * 60
-limitT - 10 * 60
-militT - 5 * 60
-limitT - 60
-limitT - 30
-limitT - 10
-
-로직 생각을 잘못했다. 이렇게 하면 계속 누적되어서 기다리게 된다...
-
-처음에 주어지는 수에서...
-1시간 넘어지는 초까지 자른다.
-1시간이 딱 맞도록 남은 시간 만큼 sleep 한다.
-그리고... 30분을 sleep
-그리고 20분을 sleep 해서 10분이 남도록 맞춘다
-그리고 5분 sleep
-4 분 sleep
-30초 sleep
-20초 sleep
-10초부터 1초 단위로 카운트
-
-
-그러면 주어진 수에서... 3600까지 잘라야 한다. 랜덤 단위의 수 base에 접근하기까지 차이를 그냥 sleep한다.
-base에 접근하고 나서 1시간, 30분, 10분, 5분, 1분, 30초, 10초까지 고정으로 자른다.
-
-그런데 고정에서 0인 것도 확인을 해야 한다.
-
-base까지 자르고 나서 0으로 나눠서 값이 0이 나오면 감당 안되는 상태. pass한다.
-0이 아니라 값이 나오면...? 
-
-diff=limitT - 3600
-sleep diff
-echo 1 hour left
-
-sleep 30 mins
-echo 30 mins left
-
-sleep 20 mins
-echo 10 mins left
-
-slee 5 mins
-echo 5 mins left
-
-sleep 4 mins 
-echo 60 secs left
-
-sleep 30 secs
-echo 30 secs left
-
-sleep 20 secs
-echo 10 secs left
-
-
-
-
-
-base 시간이 1시간을 초과하는가?
-    1시간까지 시간 단위로 표시
-
-    
-    fewHours=limitT / 3600
-    if fewHours > 0
-
-        leftOver=limitT % 3600
-        sleep leftOver
-        
-        while fewHours > 1
-            echo fewHours left
-            sleep 3600
-            fewHours --
-    
-
-
-
-그 다음부터 분 단위로 표시
-
-time=60
-sum=0
-arr=(30 20 5 4)
-for i = 1 to arr.length
-    sleep arr[i] * 60
-    (time - sum) mins left
-    sum += arr[i]
-
-초 단위
-arr(30 20)
-
-10초
-
-
-TIME
-
-
-
-
-
-
-<< 'TRY1'
-
-diff=$(( $limitT - $base ))
-echo $diff minus
-sleep $diff
-echo 1 hour left
-
-sleep $(( 30 * 60 ))
-echo 30  mins left
-
-sleep $(( 20 * 60 ))
-echo 10  mins left
-
-sleep $(( 5 * 60 ))
-echo 5  mins left
-
-sleep $(( 4  * 60 ))
-echo 1 mins left
-
-sleep 30
-echo 30 secs left
-
-sleep 20
-echo 10 secs left
-
-fin=$(( $SECONDS + 10 ))
-sec=$SECONDS
-while [ $SECONDS -lt $fin ]
-do
-    if [ $sec -ne $SECONDS ]
+    if [ $limitT -gt $(( ${arr[$i]} * 60 )) ]
     then
-        sec=$SECONDS
-        echo "$(( ${fin} - ${SECONDS} )) secs left."
+        leftOver=$(( $limitT - $(( ${arr[$i]} * 60 )) ))
+        sleep $leftOver
+        echo ${arr[$i]} mins left.
+        limitT=$(( $limitT - $leftOver ))
     fi
-done
-TRY1
+done  
 
-# arr=(30 10 5 1)
-
-# for (( i=0; i<${#arr[@]}; i++ ))
-# do
-#     t=$(( $limitT - ${arr[i]} * 60 ))
-#     if [ $t -gt 0 ]
-#     then
-#         sleep $t
-#         echo ${arr[${i}]} mins left.
-
-#     fi
-
-# done
+echo "checkout limitT=$limitT"
 
 
-# sleep $(( $limitT - 30 * 60 ))
-# echo 30 mins left
-# sleep $(( $limitT - 10 * 60 ))
-# echo 10 mins left
-# sleep $(( $limitT - 5 * 60 ))
-# echo 5 mins left
-# sleep $(( $limitT - 60 ))
-# echo  60 secs left
-# sleep $(( $limitT - 30 ))
-# echo  30 secs left
-
-
-# for (( i=10; i>0; i-- ))
-# do
-#     sleep $(( $limitT - 10 ))
-#     echo 10 secs left
-# done
-
-
-
-
-
-# sleep ${limitT}
-
-
-# limitT=$(( 100 + $RANDOM % 120 )) 
-# echo "wait ${limitT} limitT"
-# sleep 60
-# sleep ${limitT}
-# echo awake!
-
-# sec=$SECONDS
-# limitM=$(( $limitT / 60 ))
-# # mins=0
-# while [ $SECONDS -lt $limitT ]
-# do
-#     # mins=$(( $SECONDS / 60 ))
-#     # if [ $mins -ge $(( $limitM - 5 )) ]
-#     # then
-#     #     if [ $mins -ne $(( $SECONDS / 60 )) ]
-#     #     then
-#     #         echo "$(( ${limitM} - ${mins} )) mins left."
-#     #     fi
-
-#     # fi
-
-#     if [ $SECONDS -ge $(( $limitT - 60 )) ]
-#     then
-#         if [ $sec -ne $SECONDS ]
-#         then
-#             sec=$SECONDS
-#             echo "$(( ${limitT} - ${SECONDS} )) secs left."
-#         fi
-#     fi
-# done
-
+#SECONDS
+for (( i=0; i<${#arr[@]}; i++ ))
+do
+    if [ $limitT -gt ${arr[$i]} ]
+    then
+        leftOver=$(( $limitT - ${arr[$i]} ))
+        sleep $leftOver
+        echo ${arr[$i]} secs left.
+        limitT=$(( $limitT - $leftOver ))
+    fi
+done   
 
 init
 
