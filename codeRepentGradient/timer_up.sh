@@ -135,20 +135,7 @@ record(){
     echo -e $1 >> preq.txt
 }
 
-
-
-: << "INIT"
-    init main function
-INIT
-
-
-init(){
-    updateVerses
-    echo ${numV} verses exist.
-
-    hideAll
-
-    IFS=$'\n'
+read(){
 
 << "READ"
 
@@ -187,7 +174,7 @@ READ
             # echo "${RAC[${idxInside}]} ${idxR} = ${RAC[${idxInside}]^^}${idxR} : $line"
             # echo "${RAC[${idxInside}]^^}${idxR} : $line"
             # ${!RAC}+="$line\n\n"
-            # echo $line
+            echo $line
             case $idxInside in
 
             0)  
@@ -197,11 +184,13 @@ READ
                 ;;
 
             1)
-                contArr+=("${RAC[${idxInside}]^^}${idxR} : $line")
+                # contArr+=("${RAC[${idxInside}]^^}${idxR} : $line")
+                contArr+=($line)
                 ;;
 
             2)
-                ansArr+=("${RAC[${idxInside}]^^}${idxR} : $line")
+                # ansArr+=("${RAC[${idxInside}]^^}${idxR} : $line")
+                ansArr+=($line)
                 ;;
             esac
 
@@ -222,11 +211,11 @@ READ
     for (( i=0; i<${#ruleArr[@]}; i++ ))
     do
         
-        echo ${ruleArr[$i]}
+        echo "rule${i} : ${ruleArr[$i]}"
         echo
-        echo ${contArr[$i]}
+        echo "cont${i} : ${contArr[$i]}"
         echo
-        echo ${ansArr[$i]}
+        echo "ans${i} : ${ansArr[$i]}"
         # for (( j=0; j<${#RAC[@]}; j++ ))
         # do
             
@@ -246,6 +235,23 @@ READ
     done
 
 
+
+}
+
+
+
+: << "INIT"
+    init main function
+INIT
+
+
+init(){
+    updateVerses
+    echo ${numV} verses exist.
+
+    # hideAll
+
+    IFS=$'\n'
 
     # str2='RULE 1 DO NOT BE OBSESSED.\n \nRULE 2 PRAYER. \nHIS HELP. HIS POWER. HIS KNOWLEDGE.\nGOD LOVES US.\n \nRULE 3 STOP & REST \nSTOP & REST WHEN OBSESSED. STOP WHEN YOU ARE OBSESSED.  I REPEAT AGAIN. STOP WHEN YOU GET OBSESSED.  \n  \nRULE 4 TESTCASES \n \nRULE 5 PSEUDOCODE \n \nRULE 6 INITIALIZATION \n \nRULE 7 KEEP IT SIMPLE, YOU STUPID!\nIT’S A KISS.\nEASIER, SIMPLER, AND MORE LIKELY BRUTEFORCE THEN YOU THOUGHT'
 
@@ -453,33 +459,10 @@ GATE
     # echo "init again";
     # $(nohup ./timer.sh &)
 }
-# init
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<< "START"
-
-START
-
-echo -e "\n\n\n\n$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y)" 
-
-<< "WAIT"
+wait(){
+    << "WAIT"
 
 WAIT
 
@@ -552,9 +535,37 @@ do
         limitT=$(( $limitT - $leftOver ))
     fi
 done   
+}
 
 
-init
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<< "START"
+
+START
+
+echo -e "\n\n\n\n$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y)" 
+
+
+wait
+read
+# init
 
 
 
