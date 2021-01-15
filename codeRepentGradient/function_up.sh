@@ -401,7 +401,6 @@ REPEAT
 
 
     echo "the number : ${#ruleArr[@]}"
-    i
     for (( i=0; i<${#ruleArr[@]}; i++ ))
     do
         echo -e "\n\n\nEnter Rule ${i}"
@@ -412,13 +411,36 @@ REPEAT
         # c=cont${i}
         # echo "################################${r} ${c}"
         # echo -e "${!r}\n${!c}"
+        
+        correctRes="${ansArr[$i]}"
+        echo "correct response : $correctRes"
+
 
         apple_text "${ruleArr[${i}]}\n\n\n\n${contArr[${i}]}"
         echo $ans
         echo $msg
 
         limit=10
-        while [ "$ans" = "No" -o ${#msg} -lt ${limit} -o "$msg" != "${ansArr[$i]}" ]
+
+<< "PSEUDO"
+ while (ans[i] != " " -a msg != ans[i]) -o (ans[i] = " " -a limit > #msg)
+        repeat
+
+질문의 종류 3가지
+입력해야 하는 문구를 정확히 입력해야 한다.
+내용을 입력해야 하되, 정해진 글자 수를 넘어야 한다
+그냥 버튼만 누르면 된다.
+
+각 경우에 따라 조건을 만족하지 않으면 같은 화면이 반복되어서 출력
+버튼을 No을 누르거나, 입력해야 하는 문구가 있을 때 틀렸거나, 입력해야 하는 문구는 없어서 자유롭게 입력할 수 있는데 글자 수를 채우지 못했을 때
+반복!
+
+여기에 msg가 대문자이든 소문자이든 맞도록 하기 위해서 입력받은 문구를 대문자로 변환
+msg^^
+
+PSEUDO
+    while [ "$ans" = "No" -o \( "$correctRes" != " " -a "${msg^^}" != "$correctRes" \) -o \( "$correctRes" = " " -a ${#msg} -lt ${limit} \) ]
+        # while [ "$ans" = "No" -o ${#msg} -lt ${limit} -o "$msg" != "${ansArr[$i]}" ]
         do
             alertUpdate $msg $limit
             apple_text ${alrt}${warn}${ruleArr[${i}]}
