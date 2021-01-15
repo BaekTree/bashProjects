@@ -24,7 +24,7 @@ viewVerse(){
     echo "opening ${vArr[${idxV}]}"
     open -a Preview "/Users/baek/OneDrive/사진/삼성 갤러리/Pictures/Bible/${vArr[${idxV}]}"
     # $(sleep 10 || echo 10 passed!) &
-    sleep 1
+    sleep 0.5
     # echo 0.3 passed!
     $(osascript -e "tell application \"Preview\"
 	set bounds of front window to {0, 0, 600, 900}
@@ -50,14 +50,15 @@ closeVerse(){
         echo preview pids : ${pids}
         echo killing preview $pids
         kill -9 ${pids}
+        sleep 0.5
     fi
 }
 
 
 apple_text(){
+    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Yes\", \"No\"} default answer \"\" default button \"No\"")
     closeVerse;
     viewVerse &
-    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Yes\", \"No\"} default answer \"\" default button \"No\"")
     parseBtnAns $res
     parseTxt $res
 
@@ -168,6 +169,12 @@ record(){
 READ
 
 
+
+declare -a ruleArr
+declare -a contArr
+declare -a ansArr
+declare -a limitArr
+
 getRules(){
     file='./rules.txt'
     idx=1
@@ -194,6 +201,9 @@ getRules(){
         then
             # echo no ans
             ansArr+=("${line#"ans : "}")
+        elif [[ $line == *"limit"* ]]
+        then
+            limitArr+=("${line#"limit : "}")
         fi
 
         # echo
@@ -377,8 +387,6 @@ init(){
     updateVerses
     echo ${numV} verses exist.
 
-    hideAll
-
     IFS=$'\n'
 
     # str2='RULE 1 DO NOT BE OBSESSED.\n \nRULE 2 PRAYER. \nHIS HELP. HIS POWER. HIS KNOWLEDGE.\nGOD LOVES US.\n \nRULE 3 STOP & REST \nSTOP & REST WHEN OBSESSED. STOP WHEN YOU ARE OBSESSED.  I REPEAT AGAIN. STOP WHEN YOU GET OBSESSED.  \n  \nRULE 4 TESTCASES \n \nRULE 5 PSEUDOCODE \n \nRULE 6 INITIALIZATION \n \nRULE 7 KEEP IT SIMPLE, YOU STUPID!\nIT’S A KISS.\nEASIER, SIMPLER, AND MORE LIKELY BRUTEFORCE THEN YOU THOUGHT'
@@ -440,7 +448,7 @@ GATE
     apple_dialog $rules
     while [ "$ans" = "No" ]
     do
-        apple_dialog "${warn}${rules}"
+        apple_dialog "${warn}\n\n${rules}"
     done
 
 
@@ -460,7 +468,9 @@ GATE
 
 
 
+<< "REPEAT"
 
+REPEAT
 
     # record "\n\n\n\n\n\n\n-"
 
@@ -483,7 +493,7 @@ GATE
         # echo "################################${r} ${c}"
         # echo -e "${!r}\n${!c}"
 
-        apple_text "${ruleArr[${i}]}\n${contArr[${i}]}"
+        apple_text "${ruleArr[${i}]}\n\n\n\n${contArr[${i}]}"
         echo $ans
         echo $msg
         # record $ans
