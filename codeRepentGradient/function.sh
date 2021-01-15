@@ -55,8 +55,8 @@ closeVerse(){
 
 
 apple_text(){
-    # closeVerse;
-    # viewVerse &
+    closeVerse;
+    viewVerse &
     res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Yes\", \"No\"} default answer \"\" default button \"No\"")
     parseBtnAns $res
     parseTxt $res
@@ -65,8 +65,8 @@ apple_text(){
 
 
 apple_dialog(){
-    # closeVerse
-    # viewVerse &
+    closeVerse
+    viewVerse &
     res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Yes\", \"No\"} default button \"No\"")
     parseBtnAns $res
 }
@@ -377,7 +377,7 @@ init(){
     updateVerses
     echo ${numV} verses exist.
 
-    # hideAll
+    hideAll
 
     IFS=$'\n'
 
@@ -492,7 +492,7 @@ GATE
         while [ "$ans" = "No" -o ${#msg} -lt ${limit} ]
         do
             alertUpdate $msg $limit
-            apple_text ${alrt}${warn}${rule2}
+            apple_text ${alrt}${warn}${ruleArr[${i}]}
         done
 
         record $msg
