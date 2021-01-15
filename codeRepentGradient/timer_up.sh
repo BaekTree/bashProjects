@@ -2,7 +2,6 @@
 # read $1
 # echo input : $1
 arg=$1
-# clear
 
 # ascriptComm=osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Yes\", \"No\"} default button \"No\""
 
@@ -26,16 +25,20 @@ source function.sh
 
 START
 
+
+
+
+clear
 echo -e "\n\n\n\n$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y)" 
 
-# wait $arg
+wait $arg
 getRules
 init
 
 
 
 
-    
+
 << 'CASEYES'
     apple_text $rule1
 
