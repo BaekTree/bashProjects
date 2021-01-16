@@ -25,16 +25,13 @@ viewVerse(){
     open -a Preview "/Users/baek/OneDrive/사진/삼성 갤러리/Pictures/Bible/${vArr[${idxV}]}"
     # $(sleep 10 || echo 10 passed!) &
     sleep 0.5
-    # echo 0.3 passed!
     $(osascript -e "tell application \"Preview\"
 	set bounds of front window to {0, 0, 600, 900}
     end tell")
-# open -a Preview -width 200 -height 500 '/Users/baek/OneDrive/사진/삼성 갤러리/Pictures/Bible/1585813311117.png'
 
 }
 
 hideAll(){
-    # hideAll=$(osascript -e "tell application \"Finder\"\nset visible of every process whose visible is true and name is not \"Finder\" to false\nclose every window\nend tell\ndelay 1\ntell application \"Finder\" to quit\ntell application \"Notes\" to quit")   
     osascript -e "tell application \"Finder\"
     set visible of every process whose visible is true and name is not \"Finder\" to false
     close every window
@@ -78,11 +75,6 @@ parseBtnAns(){
     priorIFS=$IFS
     IFS=$": "
     local arg=($1)
-    # echo $arg
-    # apple_text $arg
-    # arg=($res)
-
-    # echo ${arg[0]}
 
     # for (( i=0; i<${#arg[@]}; i++ ))
     local i
@@ -96,7 +88,6 @@ parseBtnAns(){
         fi        
     done
     IFS=$priorIFS
-    # res=${arg[2]}
 }
 
 parseTxt(){
@@ -112,11 +103,8 @@ parseTxt(){
         echo ${arg[i]}
         if [ ${arg[i]} == " text returned" ]
         then
-        #     if [ ${arg[(( $i+1 ))]} == "returned" ]
-              # then
-                msg=${arg[(( $i+1 ))]}
-                echo txt is $msg
-        #     fi
+            msg=${arg[(( $i+1 ))]}
+            echo txt is $msg
         fi
         
     done
@@ -132,50 +120,337 @@ record(){
     echo -e $1 >> preq.txt
 }
 
+printArrs(){
+    #print Arr
+    echo -e "\n\n\nprint all items"
+    for (( i=0; i<${#ruleArr[@]}; i++ ))
+    do
+        
+        echo -e "ruleArr${i} : ${ruleArr[$i]}"
+        echo
+        echo -e "contArr${i} : ${contArr[$i]}"
+        echo
+        echo -e "ansArr${i} : ${ansArr[$i]}"
+        echo
+        echo -e "limitArr${i} : ${limitArr[$i]}"
+        echo -e "-----\n\n\n"
+        # for (( j=0; j<${#RAC[@]}; j++ ))
+        # do
+            
+        #     # echo ${RAC[$j]}
+        #     name=${RAC[$j]}
+        #     # echo $name
+        #     name=${name}Arr
+        #     echo ${name}${i}
+        #     echo ${!name[$i]}
+        #     # echo
+        #     # echo ${${!${RAC[$j]}Arr}[$i]}
+        # done
+    done
+    echo size of ruleArr : ${#ruleArr[@]}
+    echo size of contArr : ${#contArr[@]}
+    echo size of ansArr : ${#ansArr[@]}
+    echo size of limitArr : ${#limitArr[@]}
+
+    echo
+}
+
 << "READ"
 
-    파일에서 string을 읽는다.
-    개행 빈칸인 줄을 만날 때 마다 다음 페이지의 내용 index으로 전환한다.
-    동일한 페이지에서는 첫번째 줄은 rule, 두번째 줄은 cont, 세번째 줄은 ans이다. 
-    ans는 있을 수도 있고 없을 수도 있다. 
+테스트케이스
+rule : 을 발견한다 ruleArr에 저장할 것이다.
+엔터가 있어도 계쏙 rule에 저장
 
-    입력 textline
+cont나 ans을 만나면 그때 contArr, ansArr에 넣는다.
+빈줄을 만나면 다음 rule으로 넘어간다.
 
-    메모
-    ans가 있을 수도 있고 없을 수도 있다.
-    2번째 줄의 cont는 반드시 있다. cont 다음 줄이 빈줄이면 거기서 끝이고
-    빈줄이 아니면 ans가 있는 것이다.
-    contents도 없을 수 있다!
+현재 저장할 arr을 명시해둔다. 근데 그게 되나? bash에서?
 
-    그러니까... rule 다음에 빈칸이 나오면... 일단 초기화를 하니까 상관없다 사실!
+curArr=$ruleArr
+curAA+=...
+
+---
+
+전통적인 시도
+테스트케이스
+rule을 만난다. 
+빈칸이나 cont가 있거나 ans가 있지 않으면 모두 ruleArr[i]에 저장한다.
+ruleArr+='\n'nextLine
+
+만약 빈줄을 만났는데, 현재 arr이 rule이었다면
+cont, ans, limit arr을 모두 저장해야 한다. 
+
+if curArr=rule
+    fill cont
+    fill ans
+    fill limit
+if curArr=cont
+    fill ans
+    fill limit
+
+만약 array을 넣거나 nameref을 넣을 수 있다면?
+---
 
 
+i=0
+order=0
+while read line
+    line을 읽는다
+    if line = empty line
+        for idx = order to len RAC
+            tempArr=RAC[idx] arr
+            tempArr+=" "
+        order=0
+        continue
 
-    ㄷㅏ시 해보자.
+    is rule, cont, ans, limit?
+    if rule
+        i=0
+        curArr[rule]
+        curArr+=(line)
+    if cont
+        i=1
+        curArr[cont]
+        curArr+=(line)
+    if ans
+        i=2
+        curArr[ans]
+        curArr+=(line)
+    if limit
+        i=3
+        curArr[limit]
+        curArr+=(line)
+    
 
-    한줄 한줄 읽는다. 최대 3줄 까지 1개의 rule에 포함된다.
-    1줄을 rule으로 읽는다.
-    다음 줄이 빈칸이다. 그러면 남아있는 cont와 ans을 빈칸으로 입력한다.
-    그러면 다음 rule으로 넘어간다.
+    if order < i
+        for idx = order to i
+            tempArr=RAC[idx] arr
+            tempArr+=" "
+        order = i
 
-    whlie read line
-        if line = ""
-            
+    order++
 
-        ruleArr+=line
-
-
-
-READ
+    if order > 2
+        order = -1
+    
 
 
+done
+
+---
 
 declare -a ruleArr
 declare -a contArr
 declare -a ansArr
 declare -a limitArr
 
+allArr=( ruleArr contArr ansArr limitArr )
+arrIdx=0
+while read line
+do
+    if [ line = "" ]
+        local read_i
+        for (( read_i=$arrIdx; read_i<${#allArr[@]}; read_i++ ))
+        do
+            t=${allArr[$read_i]}
+            declare -n tmpArr=${t[@]}
+            tempArr+=(" ")
+        done
+        arrIdx=0
+        continue
+
+    t=${allArr[$arrIdx]}
+    declare -n tmpArr=${t[@]}
+    tempArr+=(line)
+    arrIdx=$(( arrIdx + 1 ))
+    if [ arrIdx \gt 2 ]
+    then
+        arrIdx=0
+    fi
+done
+
+
+---
+
+A : ( rule cont ans limit )
+for i in A
+if curArr[i] = rule
+    idx=i
+    break
+
+for i=idx to A.len
+    fill A[i]
+
+---
+검색
+https://unix.stackexchange.com/questions/545502/bash-array-of-arrays
+
+
+declare -a ruleArr
+declare -a contArr
+declare -a ansArr
+declare -a limitArr
+arr=( ruleArr contArr ansArr limitArr )
+
+for i in $arr
+do
+    declare -n temtArr=$i
+
+    for j in $tempArr
+        j+=(...)
+done
+
+이것을 적용하면...
+
+while read line
+do
+    if line = empty line
+        declare -n arr=
+done
+
+
+
+
+
+READ
+
+
+# fillArr(){
+#     declare -n arr=$1
+#     arr+=($2)
+# }
+declare -a ruleArr=()
+declare -a contArr=()
+declare -a ansArr=()
+declare -a limitArr=()
+
 getRules(){
+    file='./rules.txt'
+    allArr=( ruleArr contArr ansArr limitArr )
+
+    order=${#allArr[@]}
+    arrIdx=0
+
+    ruleNum=1
+
+    while read line;
+    do  
+        # echo
+        # echo
+        # echo "line${line}line"
+        # echo
+        # echo
+        if [[ $line == "" ]]
+        then
+            echo newline
+            continue
+        fi
+
+        if [[ $line == *"rule"* ]]
+        then
+            echo
+            arrIdx=0
+            r="${line#"rule : "}"
+            # echo "get rule $r"
+            # tmpArr+=("$r")
+            rules+="RULE ${ruleNum} : $r\n\n\n\n"
+            ruleNum=$(( ruleNum + 1 ))
+            
+            t=${allArr[$arrIdx]}
+            declare -n tmpArr=${t[@]}
+            tmpArr+=("$r")
+            echo "t=$t, r=$r"
+            echo ${tmpArr[@]}
+            
+            # 새로운 빈줄을 만났을 때 남아있는 cont ans limit을 초기화한다.
+            local read_i
+            # echo ----------
+
+            echo "new : from $order to ${#allArr[@]}"
+            for (( read_i=$order; read_i<${#allArr[@]}; read_i++ ))
+            do
+                t=${allArr[$read_i]}
+                declare -n tmpArr=${t[@]}
+                tmpArr+=(" ")
+                echo "t=$t, r=\" \""
+                echo ${tmpArr[@]}
+            done
+            order=1
+
+            continue
+        fi
+        
+        
+
+
+        if [[ $line == *"cont"* ]]
+        then
+            # echo "get cont $line"
+            arrIdx=1
+            r=("${line#"cont : "}")
+            # echo $r
+        elif [[ $line == *"ans"* ]]
+        then
+            # echo "get ans $line"
+            arrIdx=2
+            r=("${line#"ans : "}")
+            # echo $r
+        elif [[ $line == *"limit"* ]]
+        then
+            # echo "Get limit $line"
+            arrIdx=3
+            r=("${line#"limit : "}")
+            # echo $r
+        fi
+
+        # echo order=$order
+        t=${allArr[$arrIdx]}
+        declare -n tmpArr=${t[@]}
+        tmpArr+=("$r")
+        echo "t=$t, r=$r"
+        echo ${tmpArr[@]}
+
+
+        # echo tmpArr=$tmpArr
+        # echo line=$line
+        # tmpArr+=("$line")
+
+
+        # echo "----------order : $order and arrIdx : $arrIdx-----------"
+        if [ $order -lt $arrIdx ]
+        then
+            # echo "runeNum=$ruleNum"
+            # echo ruleArr
+            echo "skip : from $order to $arrIdx"
+
+            local read_i
+            for (( read_i=$order; read_i<$arrIdx; read_i++ ))
+            do
+                t=${allArr[$read_i]}
+                # echo "target array : $t = \" \""
+                declare -n tmpArr=${t[@]}
+                # echo "temp arr : $tmpArr"
+                tmpArr+=(" ")
+            done
+            order=$arrIdx
+        fi
+
+        order=$(( order + 1 ))
+
+        # if [ $order -gt 3 ]
+        # then
+        #     order=0
+        # fi
+    done < $file
+
+    printArrs
+    # echo $rules
+    
+
+}
+
+
+getRules2(){
     file='./rules.txt'
     idx=1
     while read line;
@@ -212,33 +487,10 @@ getRules(){
 
     done < $file
 
-    #print Arr
-    echo -e "\n\n\nprint all items"
-    for (( i=0; i<${#ruleArr[@]}; i++ ))
-    do
-        
-        echo "rule${i} : ${ruleArr[$i]}"
-        echo
-        echo "cont${i} : ${contArr[$i]}"
-        echo
-        echo "ans${i} : ${ansArr[$i]}"
-        # for (( j=0; j<${#RAC[@]}; j++ ))
-        # do
-            
-        #     # echo ${RAC[$j]}
-        #     name=${RAC[$j]}
-        #     # echo $name
-        #     name=${name}Arr
-        #     echo ${name}${i}
-        #     echo ${!name[$i]}
-        #     # echo
-        #     # echo ${${!${RAC[$j]}Arr}[$i]}
-        # done
-        echo -----
-        echo
-        echo
 
-    done
+
+    
+
 }
 
 
@@ -389,34 +641,6 @@ init(){
 
     IFS=$'\n'
 
-    # str2='RULE 1 DO NOT BE OBSESSED.\n \nRULE 2 PRAYER. \nHIS HELP. HIS POWER. HIS KNOWLEDGE.\nGOD LOVES US.\n \nRULE 3 STOP & REST \nSTOP & REST WHEN OBSESSED. STOP WHEN YOU ARE OBSESSED.  I REPEAT AGAIN. STOP WHEN YOU GET OBSESSED.  \n  \nRULE 4 TESTCASES \n \nRULE 5 PSEUDOCODE \n \nRULE 6 INITIALIZATION \n \nRULE 7 KEEP IT SIMPLE, YOU STUPID!\nIT’S A KISS.\nEASIER, SIMPLER, AND MORE LIKELY BRUTEFORCE THEN YOU THOUGHT'
-
-    # rule1="RULE 1 MY UTILITY IS MAXIMIZED IN THE GRADIENT VECTOR DIRECTION IN REPENTENCE IN GOD."    
-    # rule2="RULE 2 THE PROOF OF THE FAITH"
-    # rule3="RULE 3 PRAYER."
-    # rule4="RULE 4 STOP AND REST"    
-    # rule5="WHAT IS YOUR EMOTION NOW?"
-    # rule6="RULE 6 MEMO VERSES"
-
-    # rule6="RULE 6 TESTCASES."
-    # rule7="RULE 7 KEEP IT SIMPLE, YOU STUPID!"
-    # rule8="RULE 5 PSEUDOCODE "
-    # rule9="RULE 6 INITIALIZATION"
-
-    # ans1="MY UTILITY IS MAXIMIZED IN THE GRADIENT VECTOR DIRECTION IN REPENTENCE IN GOD."
-
-    # cont1="DO NOT BE OBSESSED. GOD IS THE CREATEOR OF THIS WORLD. 만물이 주에게서 나오고 주로 말미암고 주께로 돌아감이라. 세세에 영원히 주께 영광이 있을지어다. \n\nPLEASE TYPE ${ans1}\n\nDO NOT FORGET CPAS LOCK.\nDO NOT FORGET PERIOD."
-    # cont2="TELL ME THE PROOF AND HISTORY OF HOW GOD HAS DELIEVERED YOU SO FAR.\nLIST THEM UP"
-    # cont3="HIS HELP. HIS POWER. HIS KNOWLEDGE.\nGOD LOVES US.\n\nTYPE PRAYER REEQUEST NOW.\n\nPLEASE TYPE MORE THAN 20 CHARS"
-    # cont4="STOP AND REST WHEN OBSESSED.\nSTOP WHEN YOU ARE OBSESSED.\n\nI REPEAT AGAIN.\nSTOP WHEN YOU GET OBSESSED.\n\nARE YOU OBSESSED?"  
-    # cont5=" "
-    # cont6="GIMME A MEMEO AMONG THE VERSES THAT YOU SAW\n"
-
-    # cont6=" "
-    # cont7="IT’S A KISS.\nEASIER, SIMPLER, AND MORE LIKELY BRUTEFORCE THEN YOU THOUGHT"
-    # cont8=" "
-    # cont9=" "
-
 
 
     warn="\nGOD LOVES YOU\nJesus has secrificed himself for you\n\n\n\n\n"
@@ -452,38 +676,17 @@ GATE
     done
 
 
-
-
-    # echo "Enter Rule 1"
-    # apple_text "${rule1}\n${cont1}"
-    # # open -a Preview '/Users/baek/OneDrive/사진/삼성 갤러리/Pictures/Bible/1585813311117.png'
-    # echo $ans
-    # echo $msg
-    # while [ "$ans" = "No" -o "$msg" != "$ans1" ]
-    # do
-    #     apple_text "GOD LOVES YOU\nJesus has secrificed himself for you\n\n\n\n\n"${rule1}
-    # done
-
-
-
-
-
 << "REPEAT"
 
 REPEAT
 
-    # record "\n\n\n\n\n\n\n-"
-
     # append time and msg
-    # record "\n\n\n\n\n\n\n$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y) "
+    record "\n\n\n\n\n\n\n$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y) "
 
 
     echo "the number : ${#ruleArr[@]}"
-    i
     for (( i=0; i<${#ruleArr[@]}; i++ ))
     do
-        # echo $i
-        # idx=$(( $i + 1 ))
         echo -e "\n\n\nEnter Rule ${i}"
         echo -e "${ruleArr[${i}]}\n\n"
         echo "${contArr[${i}]}"
@@ -492,15 +695,61 @@ REPEAT
         # c=cont${i}
         # echo "################################${r} ${c}"
         # echo -e "${!r}\n${!c}"
+        
+        correctRes="${ansArr[$i]}"
+        echo "correct response : $correctRes"
+        resStr="PLEASE TYPE <$correctRes>\n\nDO NOT FORGET CPAS LOCK.\nDO NOT FORGET PERIOD."
 
-        apple_text "${ruleArr[${i}]}\n\n\n\n${contArr[${i}]}"
+        apple_text "${ruleArr[${i}]}\n\n\n\n${contArr[${i}]}\n\n\n$resStr"
         echo $ans
         echo $msg
-        # record $ans
-        # record $msg
-        limit=10
-        while [ "$ans" = "No" -o ${#msg} -lt ${limit} ]
+
+        if [ ${limitArr[$i]} = " " ]
+        then
+            limit=0
+        else
+            limit=${limitArr[$i]}
+        fi
+
+
+<< "PSEUDO"
+ while (ans[i] != " " -a msg != ans[i]) -o (ans[i] = " " -a limit > #msg)
+        repeat
+
+질문의 종류 3가지
+입력해야 하는 문구를 정확히 입력해야 한다.
+내용을 입력해야 하되, 정해진 글자 수를 넘어야 한다
+그냥 버튼만 누르면 된다.
+
+각 경우에 따라 조건을 만족하지 않으면 같은 화면이 반복되어서 출력
+버튼을 No을 누르거나, 입력해야 하는 문구가 있을 때 틀렸거나, 입력해야 하는 문구는 없어서 자유롭게 입력할 수 있는데 글자 수를 채우지 못했을 때
+반복!
+
+여기에 msg가 대문자이든 소문자이든 맞도록 하기 위해서 입력받은 문구를 대문자로 변환
+msg^^
+
+PSEUDO
+
+    # cond1="$correctRes" != " " -a "${msg^^}" != "$correctRes"
+    # cond2="$correctRes" = " " -a ${#msg} -lt ${limit}
+
+    while [ "$ans" = "No" -o \( "$correctRes" != " " -a "${msg^^}" != "$correctRes" \) -o \( "$correctRes" = " " -a ${#msg} -lt ${limit} \) ]
+        # while [ "$ans" = "No" -o ${#msg} -lt ${limit} -o "$msg" != "${ansArr[$i]}" ]
         do
+            if [ "$correctRes" != " " -a "${msg^^}" != "$correctRes" ]
+            then
+                echo "글자가 틀렸다."
+                echo ${msg^^}
+                echo $correctRes
+            #     echo "false : $cond1"
+            # fi
+            elif [ "$correctRes" = " " -a ${#msg} -lt ${limit} ]
+            then
+                echo "글자 수 미달"
+                echo ${#msg}
+                echo ${limit}
+            #     echo "false : $cond2"
+            fi
             alertUpdate $msg $limit
             apple_text ${alrt}${warn}${ruleArr[${i}]}
         done
@@ -509,96 +758,15 @@ REPEAT
     done
 
 
-    # echo "Enter Rule 2"
-    # apple_text "${rule2}\n${cont2}"
-    # echo $ans
-    # record $msg
-    # limit=20
-    # while [ "$ans" = "No" -o ${#msg} -lt ${limit} ]
-    # do
-    #     alertUpdate $msg $limit
-    #     apple_text ${alrt}${warn}${rule2}
-    # done
-
-    # record $msg
 
 
 
 
-
-
-    # echo "Enter Rule 3"
-    # apple_text "${rule3}\n${cont3}"
-    # echo $ans
-    # record $msg
-    # limit=10
-    # while [ "$ans" = "No" -o ${#msg} -lt 10 ]
-    # do
-    #     alertUpdate $msg $limit
-    #     apple_text ${alrt}${warn}${rule3}
-    # done
 
     # record "ARE YOU OBSESSED? ${msg}"
 
-
-
-
-
-
-
-
-    # echo "Enter Question"
-    # apple_text "${rule4}\n${cont4}"
-    # echo $ans
-    # record $msg
-    # limit=10
-    # while [ "$ans" = "No" -o ${#msg} -lt 10 ]
-    # do
-    #     alertUpdate $msg $limit
-    #     apple_text ${alrt}${warn}${rule4}
-    # done
-
-    # echo $msg
-
-
-
-
-    # echo "Enter Rule 5"
-    # # echo "Enter Question"
-    # apple_text "${rule5}\n${cont5}"
-    # echo $ans
-    # record $msg
-    # limit=10
-    # while [ "$ans" = "No" -o ${#msg} -lt 10 ]
-    # do
-    #     alertUpdate $msg $limit
-    #     apple_text ${alrt}${warn}${rule5}\n${cont5}
-    # done
-
-    # echo $msg
-
-    
-    # echo "Enter Rule 6"
-    # # echo "Enter Question"
-    # apple_text "${rule6}\n${cont6}"
-    # echo $ans
-    # record $msg
-    # limit=10
-    # while [ "$ans" = "No" -o ${#msg} -lt 10 ]
-    # do
-    #     alertUpdate $msg $limit
-    #     apple_text ${alrt}${warn}${rule6}\n${cont6}
-    # done
-
-    # echo $msg
-
-
-
-
-
     closeVerse
-    # echo "init again";
-    # $(nohup ./timer.sh &)
+
 }
 
 
@@ -642,7 +810,7 @@ wait(){
         done
 
         limitT=$(( $fewHours * 3600 ))
-        echo "checkout limitT=$limitT"
+        # echo "checkout limitT=$limitT"
     fi
 
     #MINUTES
@@ -650,7 +818,7 @@ wait(){
 
     for (( i=0; i<${#arr[@]}; i++ ))
     do
-        echo i=$i
+        # echo i=$i
         if [ $limitT -gt $(( ${arr[$i]} * 60 )) ]
         then
             leftOver=$(( $limitT - $(( ${arr[$i]} * 60 )) ))
@@ -658,11 +826,11 @@ wait(){
             sleep $leftOver
             echo ${arr[$i]} mins left.
             limitT=$(( $limitT - $leftOver ))
-            echo "update limitT : $limitT"
+            # echo "update limitT : $limitT"
         fi
     done  
 
-    echo "checkout limitT=$limitT"
+    # echo "checkout limitT=$limitT"
 
 
     #SECONDS
