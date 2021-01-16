@@ -24,7 +24,7 @@ viewVerse(){
     echo "opening ${vArr[${idxV}]}"
     open -a Preview "/Users/baek/OneDrive/사진/삼성 갤러리/Pictures/Bible/${vArr[${idxV}]}"
     # $(sleep 10 || echo 10 passed!) &
-    sleep 0.5
+    sleep 0.3
     $(osascript -e "tell application \"Preview\"
 	set bounds of front window to {0, 0, 600, 900}
     end tell")
@@ -308,7 +308,18 @@ do
         declare -n arr=
 done
 
+---
+만약에 개행문자를 포함하고 있다면?
+루프를 돌면서 현재 모드를 기억하고 있고
+새로운 모드가 나오기 전까지는 계속 누적만 해둔다.
+그리고 새로운 모드가 나오면 한꺼번에 저장한다.
 
+그리고 여전히 rule이 나오면 나오지 않은 항목들은 모두 빈칸으로 저장한다.
+건너 뛰어도 사이의 모드들은 빈칸으로 저장한다.
+
+루프가 끝나면 마무리로 저장을 해줘야 한다. 
+현재 상태가 저장하는 순간이 새로운 모드를 만나야 하는 것인데 마지막은 새로운 모드를 만나지 않고 끝나버린다.
+explicit하게 저장을 해줘야 한다.
 
 
 
@@ -325,13 +336,39 @@ declare -a ansArr=()
 declare -a limitArr=()
 
 getRules(){
-    file='./rules.txt'
+
+    curFile=$0
+
+    if [ $debug = "-d" ]
+    then
+        file='./rulesTest.txt'
+    elif [[ $curFile = *"_up"* ]]
+    then
+        echo "This is in dev!"
+        file='./rules_up.txt'
+    else
+        file='./rules.txt'
+    fi
+
     allArr=( ruleArr contArr ansArr limitArr )
+
+    #findLimitArr idx
+    local find_lmt
+    for (( find_lmt=0; find_lmt<${#allArr[@]}; find_lmt++ ))
+    do
+        if [ ${allArr[$find_lmt]} = "limitArr" ]
+        then
+            lmt_idx=$find_lmt
+            break
+        fi
+    done
+
 
     order=${#allArr[@]}
     arrIdx=0
 
     ruleNum=1
+    str=""  
 
     while read line;
     do  
@@ -342,25 +379,36 @@ getRules(){
         # echo
         if [[ $line == "" ]]
         then
-            echo newline
+            str+="\\n"
             continue
         fi
-
-        if [[ $line == *"rule"* ]]
+        echo "read:$line"
+        if [[ $line == *"rule : "* ]]
         then
+            if [ "$str" != "" ]
+            then
+                 t=${allArr[$arrIdx]}
+                declare -n tmpArr=${t[@]}
+                echo $str
+                tmpArr+=("$str")
+            fi
             echo
+
+            order=$(( order + 1 ))
+
             arrIdx=0
-            r="${line#"rule : "}"
-            # echo "get rule $r"
-            # tmpArr+=("$r")
-            rules+="RULE ${ruleNum} : $r\n\n\n\n"
+            line="${line#"rule : "}"
+            # echo "get rule $line"
+            # tmpArr+=("$line")
+            rules+="RULE ${ruleNum} : $line\n\n\n\n"
             ruleNum=$(( ruleNum + 1 ))
-            
-            t=${allArr[$arrIdx]}
-            declare -n tmpArr=${t[@]}
-            tmpArr+=("$r")
-            echo "t=$t, r=$r"
-            echo ${tmpArr[@]}
+            str=""
+            str+=$line$"\\n"
+            # t=${allArr[$arrIdx]}
+            # declare -n tmpArr=${t[@]}
+            # tmpArr+=("$line")
+            # echo "t=$t, line=$line"
+            # echo ${tmpArr[@]}
             
             # 새로운 빈줄을 만났을 때 남아있는 cont ans limit을 초기화한다.
             local read_i
@@ -371,44 +419,88 @@ getRules(){
             do
                 t=${allArr[$read_i]}
                 declare -n tmpArr=${t[@]}
-                tmpArr+=(" ")
-                echo "t=$t, r=\" \""
-                echo ${tmpArr[@]}
+
+                empty=" "
+
+                if [ $order -eq $lmt_idx ]
+                then
+                    empty=0
+                fi
+                # tmpArr+=($empty)
+                tmpArr+=("emptyNew")
+                # echo "t=$t, line=\" \""
+                # echo ${tmpArr[@]}
             done
-            order=1
+            order=0
 
             continue
         fi
-        
-        
 
 
-        if [[ $line == *"cont"* ]]
+
+        # 한번에 어떻게 묶는지 찾아야 함...
+        
+        if [[ $line == *"cont : "* ]]
+        then
+            t=${allArr[$arrIdx]}
+            declare -n tmpArr=${t[@]}
+            echo $str
+            tmpArr+=("$str")
+            order=$(( order + 1 ))
+        fi
+
+        if [[ $line == *"ans : "* ]]
+        then
+            t=${allArr[$arrIdx]}
+            declare -n tmpArr=${t[@]}
+            echo $str
+            tmpArr+=("$str")
+            order=$(( order + 1 ))
+        fi
+
+        if [[ $line == *"limit : "* ]]        
+        then
+            t=${allArr[$arrIdx]}
+            declare -n tmpArr=${t[@]}
+            echo $str
+            tmpArr+=("$str")
+            order=$(( order + 1 ))
+        fi
+
+
+
+        
+
+        if [[ $line == *"cont : "* ]]
         then
             # echo "get cont $line"
             arrIdx=1
-            r=("${line#"cont : "}")
-            # echo $r
-        elif [[ $line == *"ans"* ]]
+            line=("${line#"cont : "}")
+            str=""
+            # echo $line
+        elif [[ $line == *"ans : "* ]]
         then
             # echo "get ans $line"
             arrIdx=2
-            r=("${line#"ans : "}")
-            # echo $r
-        elif [[ $line == *"limit"* ]]
+            line=("${line#"ans : "}")
+            str=""
+            # echo $line
+        elif [[ $line == *"limit : "* ]]
         then
             # echo "Get limit $line"
             arrIdx=3
-            r=("${line#"limit : "}")
-            # echo $r
+            line=("${line#"limit : "}")
+            str=""
+            # echo $line
         fi
 
         # echo order=$order
-        t=${allArr[$arrIdx]}
-        declare -n tmpArr=${t[@]}
-        tmpArr+=("$r")
-        echo "t=$t, r=$r"
-        echo ${tmpArr[@]}
+        # t=${allArr[$arrIdx]}
+        # declare -n tmpArr=${t[@]}
+        # tmpArr+=("$str")
+        # echo "t=$t, line=$line"
+        # echo ${tmpArr[@]}
+        str+=$line$"\\n"
 
 
         # echo tmpArr=$tmpArr
@@ -430,18 +522,23 @@ getRules(){
                 # echo "target array : $t = \" \""
                 declare -n tmpArr=${t[@]}
                 # echo "temp arr : $tmpArr"
-                tmpArr+=(" ")
+                tmpArr+=("emptySkip")
             done
             order=$arrIdx
         fi
 
-        order=$(( order + 1 ))
 
         # if [ $order -gt 3 ]
         # then
         #     order=0
         # fi
     done < $file
+    t=${allArr[$arrIdx]}
+    declare -n tmpArr=${t[@]}
+    echo $str
+    tmpArr+=("$str")
+
+
 
     printArrs
     # echo $rules
@@ -700,7 +797,7 @@ REPEAT
         echo "correct response : $correctRes"
         resStr="PLEASE TYPE <$correctRes>\n\nDO NOT FORGET CPAS LOCK.\nDO NOT FORGET PERIOD."
 
-        apple_text "${ruleArr[${i}]}\n\n\n\n${contArr[${i}]}\n\n\n$resStr"
+        apple_text "${ruleArr[${i}]}\n\n${contArr[${i}]}\n$resStr"
         echo $ans
         echo $msg
 
