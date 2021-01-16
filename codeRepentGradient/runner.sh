@@ -5,7 +5,7 @@
 
 while [ 1 ]
 do
-    baseMin=20
+    baseMin=60
     base=$(( $baseMin * 60 ))
     var=$(( base / 4 ))
     # variance test
