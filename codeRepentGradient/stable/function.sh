@@ -794,6 +794,7 @@ wait(){
     sec=$(( $limitT - $hours * 3600 - $mins * 60 ))
 
     echo $hours:$mins:$sec left
+    (osascript -e "display notification \"$hours:$mins:$sec left\" with title \"Code Repent Gradient\" subtitle \"glob arg max U s.t. U(G)\" sound name \"Frog\"")
 
     if [ $limitT -gt 3600 ]
     then
@@ -825,8 +826,10 @@ wait(){
             echo leftOver : $leftOver limitT : $limitT
             sleep $leftOver
             echo ${arr[$i]} mins left.
+            (osascript -e "display notification \"${arr[$i]} mins left\" with title \"Code Repent Gradient\" subtitle \"glob arg max U s.t. U(G)\" sound name \"Frog\"")
             limitT=$(( $limitT - $leftOver ))
             # echo "update limitT : $limitT"
+        # (osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Yes\", \"No\"} default button \"No\"")
         fi
     done  
 
@@ -841,6 +844,7 @@ wait(){
             leftOver=$(( $limitT - ${arr[$i]} ))
             sleep $leftOver
             echo ${arr[$i]} secs left.
+            (osascript -e "display notification \"${arr[$i]} mins left\" with title \"Code Repent Gradient\" subtitle \"glob arg max U s.t. U(G)\" sound name \"Frog\"")
             limitT=$(( $limitT - $leftOver ))
         fi
     done   
