@@ -353,15 +353,25 @@ getRules(){
     allArr=( ruleArr contArr ansArr limitArr )
 
     #findLimitArr idx
-    local find_lmt
-    for (( find_lmt=0; find_lmt<${#allArr[@]}; find_lmt++ ))
+    local find_idx
+    for (( find_idx=0; find_idx<${#allArr[@]}; find_idx++ ))
     do
-        if [ ${allArr[$find_lmt]} = "limitArr" ]
+        if [ ${allArr[$find_idx]} = "ruleArr" ]
         then
-            lmt_idx=$find_lmt
-            break
+            rule_idx=$find_idx
+        elif [ ${allArr[$find_idx]} = "contArr" ]
+        then
+            cont_idx=$find_idx
+        elif [ ${allArr[$find_idx]} = "ansArr" ]
+        then
+            ans_idx=$find_idx
+        elif [ ${allArr[$find_idx]} = "limitArr" ]
+        then
+            lmt_idx=$find_idx
         fi
     done
+
+    #lint ruleArr idx
 
 
     order=${#allArr[@]}
@@ -385,6 +395,8 @@ getRules(){
         echo "read:$line"
         if [[ $line == *"rule : "* ]]
         then
+            # 새로 rule을 만났을 때, 입력 중인 내용이 있었으면 넣는다. 없으면 여기서는 pass. 
+            # 기존 것을 그 arr에 쓰고 rule을 쓸 준비!
             if [ "$str" != "" ]
             then
                  t=${allArr[$arrIdx]}
@@ -394,26 +406,29 @@ getRules(){
             fi
             echo
 
+            # 직전에 쓰고 있던 값에서 rule으로 바뀌었으니 더해준다. 더 이상 기존의 order가 아니다!
             order=$(( order + 1 ))
 
-            arrIdx=0
+            arrIdx=$rule_idx
             line="${line#"rule : "}"
             # echo "get rule $line"
             # tmpArr+=("$line")
             rules+="RULE ${ruleNum} : $line\n\n\n\n"
-            ruleNum=$(( ruleNum + 1 ))
+
+            #지금 rule이 막 시작했으므로 초기화
             str=""
-            str+=$line$"\\n"
+            str+="RULE ${ruleNum} : $line"\\n""
+            ruleNum=$(( ruleNum + 1 ))
             # t=${allArr[$arrIdx]}
             # declare -n tmpArr=${t[@]}
             # tmpArr+=("$line")
             # echo "t=$t, line=$line"
             # echo ${tmpArr[@]}
             
-            # 새로운 빈줄을 만났을 때 남아있는 cont ans limit을 초기화한다.
+            # 새로운 rule을 만났을 때 넣을 값이 없던 arr들 채운다 : 남아있는 cont ans limit을 빈 값으로 넣는다.
+            # limit 값이 있었으면 order = 4, allArr.length = 4가 되어서 그냥 pass.
             local read_i
             # echo ----------
-
             echo "new : from $order to ${#allArr[@]}"
             for (( read_i=$order; read_i<${#allArr[@]}; read_i++ ))
             do
@@ -421,30 +436,34 @@ getRules(){
                 declare -n tmpArr=${t[@]}
 
                 empty=" "
-
-                if [ $order -eq $lmt_idx ]
+                # 만약 limit이 빈칸이면 숫자 0을 넣는다. init 함수에서 number을 비교해서 타입 에러가 난다 
+                if [ $read_i -eq $lmt_idx ]
                 then
                     empty=0
                 fi
-                # tmpArr+=($empty)
-                tmpArr+=("emptyNew")
+                tmpArr+=($empty)
+                # tmpArr+=("emptyNew")
                 # echo "t=$t, line=\" \""
                 # echo ${tmpArr[@]}
             done
+
+            # rule부터 다시 새로 시작!
             order=0
 
+            # rule으로 시작하고, 방금 줄은 str에 입력했으니 이제 계속 누적을 하고, rule이 아닌 줄을 만났을 때 ruleArr에 넣는다!
             continue
-        fi
-
-
 
         # 한번에 어떻게 묶는지 찾아야 함...
-        
-        if [[ $line == *"cont : "* ]]
+        # 이 부분의 역할 : 처음 cont ans limit을 발견했을 때 모드 전환
+        # 기존 arr의 내용을 쓰는 부분
+        elif [[ $line == *"cont : "* ]]
         then
+            # 기존에 읽던 arr의 index : arrIdx.
+            # 그 arr에 현재까지 내용을 넣는다.
             t=${allArr[$arrIdx]}
             declare -n tmpArr=${t[@]}
             echo $str
+            # 기존 arr의 누적해왔던 값을 기존 arr에 쓴다.
             tmpArr+=("$str")
             order=$(( order + 1 ))
         fi
@@ -456,6 +475,8 @@ getRules(){
             echo $str
             tmpArr+=("$str")
             order=$(( order + 1 ))
+        #     str=""
+        #     # echo $line
         fi
 
         if [[ $line == *"limit : "* ]]        
@@ -470,25 +491,52 @@ getRules(){
 
 
         
-
+        # 새로운 arr을 쓰기 위해 str을 모으기 "시작". 다른 arr가 나올 때 모아둔 str을 저장한다.
         if [[ $line == *"cont : "* ]]
         then
+            # 새로운 종류의 arr을 시작하니까 arrIdx을 이 arr의 고유 index으로 다시 설정해준다.
             # echo "get cont $line"
-            arrIdx=1
+            arrIdx=$cont_idx
             line=("${line#"cont : "}")
+            # 새로 arr에 넣을 str을 초기화. 여기에 계속 누적
             str=""
             # echo $line
-        elif [[ $line == *"ans : "* ]]
+        elif [[ $line == *"ans : "* ]] # user input single line as answer.
         then
+            # ans의 경우... 사용자가 값을 정확히 입력해야 한다. 그런데 지금 상태에서는 개행문자까지 다 입력?
+            # 개행을 만나면 개행문자를 str에 누적시키고 있는 상태이다.
+            # ans을 읽을 때도 rule을 만나야 str에 누적시킨 값을 ansArr에 쓴다. 그래서 rule을 만나기까지 개항문자들을 읽고 str에 누적시킬 것이다.
+            # 그래서 ansArr에 str을 입력할 때 개행까지 다 넣어 버린다. 그래서 사용자가 dialog에서 string을 그대로 입력해도 개행을 넣을 수 없으니 일치하지 않는다.
+            # 어떻게 해결?
+            # ans의 경우에는 개행을 읽지 않는다! 어차피 ans의 내용은 1줄 밖에 될 수 없다. dialog의 입력 창이 1줄이라서 개행이 나올 수가 없는 구조.
+            # 아니면 ansArr에 입력할 때 개행을 지워버리든지. 사실 이게 효율적인 것 같은데.
+            # 아니면! 개행은 1줄 밖에 읽지 않으니 1줄 읽어서 바로 저장해버리고 끝!
+            # 근데 이러면... 다른... arr을 만났을 때 또 다시 저장을 하려고 시도할텐데?
+            # 그렇다면 str을 초기화시켜버리면? 그래도 개행은 str에 들어갈 것이다. 하지만 다른 arr을 입력할 때 또 다시 str을 초기화할 테니까... 괜찮을 것 같다.
+            # 그런데 사실 이게 근본적인 문제가 아니었다. 다른 버그 발생! 지금 우리가 하려는 것은 개행에 상관없이 rules에 입력해도 자동으로 입력이 되도록 하는 것. 
+            # 그래서 개행을 만나면 개행을 읽어서 str에 누적시켰다가 다음 arr을 만나면 누적하던 값을 쓴다. 
+            # 문제는... 각 arr의 마지막 줄이 끝나고 다음 arr을 만나기까지의 개행까지 읽는다는 것! 이건 사실 ans도 마찬가지고이고 limit도 마찬가지이다. 
+            # rule과 cont는 상황이 여유롭다 어차피 표현만 하면 되니까. 그런데 ans와 limit은 비교를 해야 한다.
             # echo "get ans $line"
-            arrIdx=2
+            arrIdx=$ans_idx
             line=("${line#"ans : "}")
-            str=""
             # echo $line
+
+            t=${allArr[$ans_idx]}
+            declare -n tmpArr=${t[@]}
+            echo $str
+
+            # line이 한줄이고 내용 끝이라서 그대로 line을 arr에 쓴다.
+            tmpArr+=("$line")
+            order=$(( order + 1 ))
+
+            # ans 다음에 나오는 rule이 ans에 또 쓰려고 시도할 것이다. 그때 빈칸을 줘서 아무것도 쓰이지 않도록.
+            str=""
+
         elif [[ $line == *"limit : "* ]]
         then
             # echo "Get limit $line"
-            arrIdx=3
+            arrIdx=$lmt_idx
             line=("${line#"limit : "}")
             str=""
             # echo $line
@@ -500,6 +548,8 @@ getRules(){
         # tmpArr+=("$str")
         # echo "t=$t, line=$line"
         # echo ${tmpArr[@]}
+
+        #방금 읽은 줄을 str에 누적해서 추가!
         str+=$line$"\\n"
 
 
@@ -508,6 +558,13 @@ getRules(){
         # tmpArr+=("$line")
 
 
+        # rule, cont, ans, limit 순서인데 건너 뛰었을 때, 중간의 arr들을 빈값으로 넣는다.
+        # order을 통해서 현재 순서를 파악한다.
+        # arrIdx는 새로운 종류의 arr을 만났을 때 해당 arr의 값을 부여.
+        # order과 arrIdx을 비교한다. 새로운 arr을 만날 때마다 order과 arridx을 변화시킨다.
+        # 새로운 arr을 만나면 order은 1씩 증가하고, arrIdx는 해당 arr의 index을 부여.
+        # 만약 건너뛴게 없다면 order과 arrIdx가 동일하게 1씩 증가. 만약 건너뛰었다면 그만큼 차이가 발생!
+        # 그 인덱스들 사이의 arr에 빈값을 부여!
         # echo "----------order : $order and arrIdx : $arrIdx-----------"
         if [ $order -lt $arrIdx ]
         then
@@ -522,8 +579,9 @@ getRules(){
                 # echo "target array : $t = \" \""
                 declare -n tmpArr=${t[@]}
                 # echo "temp arr : $tmpArr"
-                tmpArr+=("emptySkip")
+                tmpArr+=(" ")
             done
+            # 빈 arr들을 채웠으니 다시 order을 arrIdx와 동일하게 맞춰준다!
             order=$arrIdx
         fi
 
@@ -795,7 +853,7 @@ REPEAT
         
         correctRes="${ansArr[$i]}"
         echo "correct response : $correctRes"
-        resStr="PLEASE TYPE <$correctRes>\n\nDO NOT FORGET CPAS LOCK.\nDO NOT FORGET PERIOD."
+        resStr="PLEASE TYPE <$correctRes>"
 
         apple_text "${ruleArr[${i}]}\n\n${contArr[${i}]}\n$resStr"
         echo $ans
@@ -851,7 +909,7 @@ PSEUDO
             apple_text ${alrt}${warn}${ruleArr[${i}]}
         done
 
-        record $msg
+        # record $msg
     done
 
 
