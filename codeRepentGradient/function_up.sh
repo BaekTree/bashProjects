@@ -126,13 +126,10 @@ printArrs(){
     for (( i=0; i<${#ruleArr[@]}; i++ ))
     do
         
-        echo -e "ruleArr${i} : ${ruleArr[$i]}"
-        echo
-        echo -e "contArr${i} : ${contArr[$i]}"
-        echo
-        echo -e "ansArr${i} : ${ansArr[$i]}"
-        echo
-        echo -e "limitArr${i} : ${limitArr[$i]}"
+        echo -e "ruleArr${i} : |${ruleArr[$i]}|"
+        echo -e "contArr${i} : |${contArr[$i]}|"
+        echo -e "ansArr${i} : |${ansArr[$i]}|"
+        echo -e "limitArr${i} : |${limitArr[$i]}|"
         echo -e "-----\n\n\n"
         # for (( j=0; j<${#RAC[@]}; j++ ))
         # do
@@ -401,6 +398,8 @@ getRules(){
             then
                  t=${allArr[$arrIdx]}
                 declare -n tmpArr=${t[@]}
+                echo "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
+                str=$(echo -e "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba')
                 echo $str
                 tmpArr+=("$str")
             fi
@@ -456,12 +455,16 @@ getRules(){
         # 한번에 어떻게 묶는지 찾아야 함...
         # 이 부분의 역할 : 처음 cont ans limit을 발견했을 때 모드 전환
         # 기존 arr의 내용을 쓰는 부분
+        # 내용 중간의 개행들은 살려두어야 하지만, 마지막 줄 이후에 다른 arr을 만나기까지 딸려오는 개행들은 지워야 한다.
+        # sed을 사용 : s/*\n$//
         elif [[ $line == *"cont : "* ]]
         then
             # 기존에 읽던 arr의 index : arrIdx.
             # 그 arr에 현재까지 내용을 넣는다.
             t=${allArr[$arrIdx]}
             declare -n tmpArr=${t[@]}
+            echo "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
+            str=$(echo -e "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba')
             echo $str
             # 기존 arr의 누적해왔던 값을 기존 arr에 쓴다.
             tmpArr+=("$str")
@@ -472,6 +475,8 @@ getRules(){
         then
             t=${allArr[$arrIdx]}
             declare -n tmpArr=${t[@]}
+            echo "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
+            str=$(echo -e "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba')
             echo $str
             tmpArr+=("$str")
             order=$(( order + 1 ))
@@ -483,6 +488,8 @@ getRules(){
         then
             t=${allArr[$arrIdx]}
             declare -n tmpArr=${t[@]}
+            echo "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
+            str=$(echo -e "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba')
             echo $str
             tmpArr+=("$str")
             order=$(( order + 1 ))
@@ -503,36 +510,10 @@ getRules(){
             # echo $line
         elif [[ $line == *"ans : "* ]] # user input single line as answer.
         then
-            # ans의 경우... 사용자가 값을 정확히 입력해야 한다. 그런데 지금 상태에서는 개행문자까지 다 입력?
-            # 개행을 만나면 개행문자를 str에 누적시키고 있는 상태이다.
-            # ans을 읽을 때도 rule을 만나야 str에 누적시킨 값을 ansArr에 쓴다. 그래서 rule을 만나기까지 개항문자들을 읽고 str에 누적시킬 것이다.
-            # 그래서 ansArr에 str을 입력할 때 개행까지 다 넣어 버린다. 그래서 사용자가 dialog에서 string을 그대로 입력해도 개행을 넣을 수 없으니 일치하지 않는다.
-            # 어떻게 해결?
-            # ans의 경우에는 개행을 읽지 않는다! 어차피 ans의 내용은 1줄 밖에 될 수 없다. dialog의 입력 창이 1줄이라서 개행이 나올 수가 없는 구조.
-            # 아니면 ansArr에 입력할 때 개행을 지워버리든지. 사실 이게 효율적인 것 같은데.
-            # 아니면! 개행은 1줄 밖에 읽지 않으니 1줄 읽어서 바로 저장해버리고 끝!
-            # 근데 이러면... 다른... arr을 만났을 때 또 다시 저장을 하려고 시도할텐데?
-            # 그렇다면 str을 초기화시켜버리면? 그래도 개행은 str에 들어갈 것이다. 하지만 다른 arr을 입력할 때 또 다시 str을 초기화할 테니까... 괜찮을 것 같다.
-            # 그런데 사실 이게 근본적인 문제가 아니었다. 다른 버그 발생! 지금 우리가 하려는 것은 개행에 상관없이 rules에 입력해도 자동으로 입력이 되도록 하는 것. 
-            # 그래서 개행을 만나면 개행을 읽어서 str에 누적시켰다가 다음 arr을 만나면 누적하던 값을 쓴다. 
-            # 문제는... 각 arr의 마지막 줄이 끝나고 다음 arr을 만나기까지의 개행까지 읽는다는 것! 이건 사실 ans도 마찬가지고이고 limit도 마찬가지이다. 
-            # rule과 cont는 상황이 여유롭다 어차피 표현만 하면 되니까. 그런데 ans와 limit은 비교를 해야 한다.
-            # echo "get ans $line"
             arrIdx=$ans_idx
             line=("${line#"ans : "}")
-            # echo $line
-
-            t=${allArr[$ans_idx]}
-            declare -n tmpArr=${t[@]}
-            echo $str
-
-            # line이 한줄이고 내용 끝이라서 그대로 line을 arr에 쓴다.
-            tmpArr+=("$line")
-            order=$(( order + 1 ))
-
-            # ans 다음에 나오는 rule이 ans에 또 쓰려고 시도할 것이다. 그때 빈칸을 줘서 아무것도 쓰이지 않도록.
+            # 새로 arr에 넣을 str을 초기화. 여기에 계속 누적
             str=""
-
         elif [[ $line == *"limit : "* ]]
         then
             # echo "Get limit $line"
@@ -591,10 +572,37 @@ getRules(){
         #     order=0
         # fi
     done < $file
-    t=${allArr[$arrIdx]}
-    declare -n tmpArr=${t[@]}
-    echo $str
-    tmpArr+=("$str")
+
+    # 마지막 오브 마지막 limit은 다른 arr을 만나지 않는다. 마지막 줄 str을 저장해준다.
+    # t=${allArr[$arrIdx]}
+    # declare -n tmpArr=${t[@]}
+    # str=$(echo -e "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba')
+    # echo $str
+
+    # if [ -z $str ]
+    # then
+    #     str=0
+    # fi
+
+    # # tmpArr+=("$str")
+    # tmpArr+=("THIS IS THE LAST LINE")
+    echo "new : from $order to ${#allArr[@]}"
+    for (( read_i=$order; read_i<${#allArr[@]}; read_i++ ))
+    do
+        t=${allArr[$read_i]}
+        declare -n tmpArr=${t[@]}
+
+        empty=" "
+        # 만약 limit이 빈칸이면 숫자 0을 넣는다. init 함수에서 number을 비교해서 타입 에러가 난다 
+        if [ $read_i -eq $lmt_idx ]
+        then
+            empty=0
+        fi
+        tmpArr+=($empty)
+        # tmpArr+=("emptyNew")
+        # echo "t=$t, line=\" \""
+        # echo ${tmpArr[@]}
+    done
 
 
 
@@ -894,8 +902,8 @@ PSEUDO
             if [ "$correctRes" != " " -a "${msg^^}" != "$correctRes" ]
             then
                 echo "글자가 틀렸다."
-                echo ${msg^^}
-                echo $correctRes
+                echo "입력한 글자 : ${msg^^}"
+                echo "입력해야 하는 글자 : /$correctRes/"
             #     echo "false : $cond1"
             # fi
             elif [ "$correctRes" = " " -a ${#msg} -lt ${limit} ]
@@ -909,7 +917,7 @@ PSEUDO
             apple_text ${alrt}${warn}${ruleArr[${i}]}
         done
 
-        # record $msg
+        record $msg
     done
 
 
@@ -1009,3 +1017,6 @@ wait(){
 
 
 
+
+
+LANG=ko_KR
