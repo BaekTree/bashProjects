@@ -20,9 +20,9 @@ fi
 debug=$2
 dWhich=$3
 
-if [ $debug != "-d" ]
+if [ $debug != "-d" -a $debug != "-t" ]
 then
-    echo -e "usage : ./timer_up.sh <seconds>.\noption : -d for debug."
+    echo -e "usage : ./timer_up.sh <seconds>.\noption : -d for debug, -t for test\n-d : use rulesTest.txt\n-t : use rules_up.txt"
     exit 0
 fi
 # ascriptComm=osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Yes\", \"No\"} default button \"No\""
