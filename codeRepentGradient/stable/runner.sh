@@ -1,11 +1,14 @@
 #! /bin/bash
 
-
-
+baseMinArg=$1
+if [ -z $baseMinArg ]
+then
+	baseMin=60
+fi
 
 while [ 1 ]
 do
-    baseMin=60
+    baseMin=$baseMinArg
     base=$(( $baseMin * 60 ))
     var=$(( base / 4 ))
     # variance test

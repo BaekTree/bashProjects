@@ -1,3 +1,3 @@
 #! /bin/bash
 
-tail -10 nohup.out
+tail -10 /Users/baek/project/bashProjects/codeRepentGradient/stable/nohup.out
