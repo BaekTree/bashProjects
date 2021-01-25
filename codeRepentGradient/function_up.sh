@@ -61,9 +61,25 @@ closeVerse(){
 }
 
 
-apple_text(){
-    debugPrint "apple_text input : $1"
-    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Yes\", \"No\"} default answer \"\" default button \"No\"")
+apple_dialog(){
+    local mode=$1
+    local dlg_arg=$2
+
+    if [ "$mode" = "text" ]
+    then
+        apple_dialog_text "$dlg_arg"
+    elif [ "$mode" = "show" ]
+    then
+        apple_dialog_show "$dlg_arg"
+    else
+        echo "ERROR in APPLE DIALOG MODE!"
+        exit 0
+    fi
+}
+
+apple_dialog_text(){
+    debugPrint "apple_dialog_text input : $1"
+    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Submit To God\", \"No\", \"Back\"} default answer \"\" default button \"No\"")
     # closeVerse;
     parseBtnAns $res
     parseTxt $res
@@ -72,7 +88,7 @@ apple_text(){
 }
 
 
-apple_dialog(){
+apple_dialog_show(){
     # closeVerse
     res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Yes\", \"No\"} default button \"No\"")
     parseBtnAns $res
@@ -85,16 +101,16 @@ parseBtnAns(){
     priorIFS=$IFS
     IFS=$": "
     local arg=($1)
+    echo ${arg[@]}
 
-    # for (( i=0; i<${#arg[@]}; i++ ))
     local i
     for i in ${arg[@]}
     do
-        if [ ${i} = "Yes" -o ${i} = "No" ]
+        if [ ${i} = "Submit To God" -o ${i} = "No" -o ${i} = "Back" ]
         # echo 
         then
             ans=${i}
-            echo button answer is $ans
+            echo "button answer is $ans"
         fi        
     done
     IFS=$priorIFS
@@ -114,7 +130,7 @@ parseTxt(){
         if [ ${arg[i]} == " text returned" ]
         then
             msg=${arg[(( $i+1 ))]}
-            debugPrint txt is $msg
+            debugPrint "txt is $msg"
         fi
         
     done
@@ -505,12 +521,12 @@ init(){
 open the gate with a dialog
 GATE
 
-    apple_dialog "Welcome Back to Code Repent Gradient!\n$warn"
+    apple_dialog "show" "Welcome Back to Code Repent Gradient!\n$warn"
 
-    apple_dialog $rules
+    apple_dialog "show" $rules
     while [ "$ans" = "No" ]
     do
-        apple_dialog "${warn}\n\n${rules}"
+        apple_dialog "show" "${warn}\n\n${rules}"
     done
 
 
@@ -523,6 +539,7 @@ REPEAT
 
 
     debugPrint "the number : ${#ruleArr[@]}"
+    local i
     for (( i=0; i<${#ruleArr[@]}; i++ ))
     do
         debugPrint -e "\n\n\nEnter Rule ${i}"
@@ -546,7 +563,7 @@ REPEAT
         fi
         debugPrint -e "$contents"
 
-        apple_text "$contents"
+        apple_dialog "text" "$contents"
         debugPrint $ans
         debugPrint $msg
 
@@ -555,6 +572,11 @@ REPEAT
             limit=0
         else
             limit=${limitArr[$i]}
+        fi
+
+        if [ "$ans" = "Back" ]
+        then
+            echo pressBack
         fi
 
 
@@ -605,7 +627,12 @@ PSEUDO
 
 
             # alertUpdate $msg $limit
-            apple_text "${alrt}${warn}${ruleArr[${i}]}\n\nType${ansArr[$i]}"
+            apple_dialog "text" "${alrt}${warn}${ruleArr[${i}]}\n\nType${ansArr[$i]}"
+            if [ "$ans" = "Back" ]
+            then
+                i=$(( i-1 ))
+                break
+            fi
         done
 
         if [ -z $debug ]
