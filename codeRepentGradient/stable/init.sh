@@ -1,2 +1,2 @@
 #! /bin/bash
-nohup ./runner.sh &
+nohup /Users/baek/project/bashProjects/codeRepentGradient/stable/runner.sh &
