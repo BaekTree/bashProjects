@@ -491,13 +491,13 @@ getRules(){
 
     if [ $debug = "-d" ]
     then
-        file='./rulesTest.txt'
+        file='/Users/baek/project/bashProjects/codeRepentGradient/data/rulesTest.txt'
     elif [[ $curFile = *"_up"* ]]
     then
         echo "This is in dev!"
-        file='./rules_up.txt'
+        file='/Users/baek/project/bashProjects/codeRepentGradient/data/rules_up.txt'
     else
-        file='./rules.txt'
+        file='/Users/baek/project/bashProjects/codeRepentGradient/data/rules.txt'
     fi
 
     allArr=( ruleArr contArr ansArr limitArr )
