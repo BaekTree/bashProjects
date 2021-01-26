@@ -63,14 +63,14 @@ closeVerse(){
 
 apple_dialog(){
     local mode=$1
-    local dlg_arg=$2
+    local dlg_arg=$@
 
     if [ "$mode" = "text" ]
     then
         apple_dialog_text "$dlg_arg"
     elif [ "$mode" = "show" ]
     then
-        apple_dialog_show "$dlg_arg"
+        apple_dialog_show "$dlg_arg" "$@"
     else
         echo "ERROR in APPLE DIALOG MODE!"
         exit 0
@@ -79,7 +79,7 @@ apple_dialog(){
 
 apple_dialog_text(){
     debugPrint "apple_dialog_text input : $1"
-    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Submit To God\", \"No\", \"Back\"} default answer \"\" default button \"No\"")
+    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Submit To God\", \"Back\"} default answer \"\" default button \"Submit To God\"")
     # closeVerse;
     parseBtnAns $res
     parseTxt $res
@@ -90,7 +90,23 @@ apple_dialog_text(){
 
 apple_dialog_show(){
     # closeVerse
-    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Yes\", \"No\"} default button \"No\"")
+    local shw_arg=$2
+    # local shw_i
+    local btn_txt
+    # for shw_i in $shw_arg
+    # do
+        if [ $shw_arg = "single" ]
+        then
+            btn_txt="buttons {\"Next\"}"
+        else
+            btn_txt="buttons {\"Next\",\"Back\"}"
+        fi
+    # done
+
+
+    # res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt default button \"Next\"")
+    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt")
+
     parseBtnAns $res
     viewVerse &
 }
@@ -99,18 +115,18 @@ apple_dialog_show(){
 # problematic!
 parseBtnAns(){
     priorIFS=$IFS
-    IFS=$": "
+    IFS=$":,"
     local arg=($1)
-    echo ${arg[@]}
+    echo "parseBtnAns ARG : ${arg[@]}"
 
-    local i
-    for i in ${arg[@]}
+    local a
+    for a in ${arg[@]}
     do
-        if [ ${i} = "Submit To God" -o ${i} = "No" -o ${i} = "Back" ]
-        # echo 
+        echo $a
+        if [ ${a} = "Submit To God" -o ${a} = "Next" -o ${a} = "Back" ]
         then
-            ans=${i}
-            echo "button answer is $ans"
+            ans=${a}
+            echo "----------button answer is $ans----------"
         fi        
     done
     IFS=$priorIFS
@@ -156,6 +172,8 @@ printArrs(){
         echo -e "contArr${i} : |${contArr[$i]}|"
         echo -e "ansArr${i} : |${ansArr[$i]}|"
         echo -e "limitArr${i} : |${limitArr[$i]}|"
+        echo -e "completeArr${i} : |${completeArr[$i]}|"
+
         echo -e "-----\n\n\n"
         # for (( j=0; j<${#RAC[@]}; j++ ))
         # do
@@ -174,6 +192,7 @@ printArrs(){
     echo size of contArr : ${#contArr[@]}
     echo size of ansArr : ${#ansArr[@]}
     echo size of limitArr : ${#limitArr[@]}
+    echo size of completeArr : ${#completeArr[@]}
 
     echo
 }
@@ -275,6 +294,11 @@ declare -a ruleArr=()
 declare -a contArr=()
 declare -a ansArr=()
 declare -a limitArr=()
+declare -a completeArr=()
+
+
+allArr=( ruleArr contArr ansArr limitArr completeArr)
+lenAllArr=${#allArr[@]}
 
 getRules(){
     # 읽은 뒤 쪼갤 때 newline단위로 줄을 구분해야 한다.
@@ -285,17 +309,16 @@ getRules(){
 
     if [ $debug = "-d" ]
     then
-        file='./rulesTest.txt'
+        file="$DIR/rulesTest.txt"
     elif [[ $curFile = *"_up"* ]]
     then
         echo "This is in dev!"
-        file='./rules_up.txt'
+        file="$DIR/testing/rules_up.txt"
     else
-        file='./rules.txt'
+        file="$DIR/stable/rules.txt"
     fi
 
-    allArr=( ruleArr contArr ansArr limitArr )
-    lenAllArr=${#allArr[@]}
+
 
     #findLimitArr idx
     local find_idx
@@ -381,7 +404,7 @@ SEG2
 
             arrIdx=$rule_idx
             line="${line#"rule : "}"
-            rules+="RULE ${ruleNum} : $line\n\n\n\n"
+            rules+="RULE ${ruleNum} : $line\n\n"
 
             #지금 rule이 막 시작했으므로 초기화
             str=""
@@ -521,12 +544,12 @@ init(){
 open the gate with a dialog
 GATE
 
-    apple_dialog "show" "Welcome Back to Code Repent Gradient!\n$warn"
+    apple_dialog_show "Welcome Back to Code Repent Gradient!\n$warn" "single"
 
-    apple_dialog "show" $rules
+    apple_dialog_show $rules "single"
     while [ "$ans" = "No" ]
     do
-        apple_dialog "show" "${warn}\n\n${rules}"
+        apple_dialog_show "${warn}\n\n${rules}" "single"
     done
 
 
@@ -542,6 +565,9 @@ REPEAT
     local i
     for (( i=0; i<${#ruleArr[@]}; i++ ))
     do
+
+
+
         debugPrint -e "\n\n\nEnter Rule ${i}"
         debugPrint -e "${ruleArr[${i}]}\n\n"
         debugPrint "${contArr[${i}]}"
@@ -563,21 +589,130 @@ REPEAT
         fi
         debugPrint -e "$contents"
 
-        apple_dialog "text" "$contents"
-        debugPrint $ans
-        debugPrint $msg
 
-        if [ ${limitArr[$i]} = " " ]
+        
+
+        if [ ${completeArr[$i]} = " " ]
         then
-            limit=0
+            backFlag=0
+            echo ------------------------false------------------------
+            apple_dialog_text "$contents"
+            debugPrint "debugPrint : $ans"
+            debugPrint $msg
+
+            if [ "$ans" = "Back" ]
+            then
+                echo ------------------------pressBack------------------------
+                i=$(( i-2 ))
+                if [ $i -le 0 ]
+                then
+                    i=-1
+                fi
+                continue
+            fi
+
+            if [ ${limitArr[$i]} = " " ]
+            then
+                limit=0
+            else
+                limit=${limitArr[$i]}
+            fi        
+
+            while [ \( "$correctRes" != " " -a "${msg^^}" != "$correctRes" \) -o \( "$correctRes" = " " -a ${#msg} -lt ${limit} \) ]
+            # while [ "$ans" = "No" -o ${#msg} -lt ${limit} -o "$msg" != "${ansArr[$i]}" ]
+            do
+                    alrt=""
+                    if [ "$correctRes" != " " -a "${msg^^}" != "$correctRes" ]
+                    then
+                        debugPrint "글자가 틀렸다."
+                        debugPrint "입력한 글자 : ${msg^^}"
+                        debugPrint "입력해야 하는 글자 : /$correctRes/"
+                        alrt="YOU ENTERED <$msg>\nPLEASE ENTER <$correctRes>.\n"
+
+                        # debugPrint "false : $cond1"
+                    # fi
+                    elif [ "$correctRes" = " " -a ${#msg} -lt ${limit} ]
+                    then
+                        debugPrint "글자 수 미달"
+                        debugPrint ${#msg}
+                        debugPrint ${limit}
+                        debugPrint "false : $cond2"
+                        alrt="YOU ENTERED <$msg>\nPLEASE ENTER MORE THAN $limit CHARS.\n"
+                    fi
+                    ans=""
+                    msg=""
+
+
+                    # alertUpdate $msg $limit
+                    apple_dialog_text "${alrt}${warn}${ruleArr[${i}]}\n\nType${ansArr[$i]}"
+                    if [ "$ans" = "Back" ]
+                    then
+                        echo ------------------------pressBack------------------------
+                        i=$(( i-2 ))
+                        if [ $i -le 0 ]
+                        then
+                            i=-1
+                        fi
+                        
+                        backFlag=1
+
+                        break
+                    fi
+            done
+
+            if [[ $backFlag == 0 ]]
+            then
+                completeArr[$i]="true"
+                echo ------------------------complete ${i}!------------------------
+                echo ${completeArr[@]}
+            fi
+
+            if [ -z $debug ]
+            then
+                record $msg
+            fi
+        else # if already submit answers to God.
+            echo ------------------------true : show mode------------------------
+
+            if [ $i -eq 0 ]
+            then
+                apple_dialog_show "$contents" "single"
+            else
+                apple_dialog_show "$contents"
+            fi
+
+            if [ "$ans" = "Back" ]
+            then
+                echo ------------------------pressBack------------------------
+                i=$(( i-2 ))
+                if [ $i -le 0 ]
+                then
+                    i=-1
+                fi
+            else # when press Next
+                echo ------------------------pressNext------------------------
+                continue
+            fi
+
+        fi
+        
+<< "COMP"
+        for i = 1 to allArr.len
+            if comArr[i] = false # 여기 seg fault 안뜰까? ㅋㅋ
+                apple_dialog text contents
+
+                while ans = no or msg = false or msgLen < limit
+                    applie_dialog text contents
+
+                    if ans = back
+                        i--
+                        break
         else
-            limit=${limitArr[$i]}
-        fi
+            aple_dialog show contents
+COMP
+        
 
-        if [ "$ans" = "Back" ]
-        then
-            echo pressBack
-        fi
+
 
 
 << "PSEUDO"
@@ -601,44 +736,7 @@ PSEUDO
     # cond1="$correctRes" != " " -a "${msg^^}" != "$correctRes"
     # cond2="$correctRes" = " " -a ${#msg} -lt ${limit}
 
-    while [ "$ans" = "No" -o \( "$correctRes" != " " -a "${msg^^}" != "$correctRes" \) -o \( "$correctRes" = " " -a ${#msg} -lt ${limit} \) ]
-        # while [ "$ans" = "No" -o ${#msg} -lt ${limit} -o "$msg" != "${ansArr[$i]}" ]
-        do
-            alrt=""
-            if [ "$correctRes" != " " -a "${msg^^}" != "$correctRes" ]
-            then
-                debugPrint "글자가 틀렸다."
-                debugPrint "입력한 글자 : ${msg^^}"
-                debugPrint "입력해야 하는 글자 : /$correctRes/"
-                alrt="YOU ENTERED <$msg>\nPLEASE ENTER <$correctRes>.\n"
 
-                # debugPrint "false : $cond1"
-            # fi
-            elif [ "$correctRes" = " " -a ${#msg} -lt ${limit} ]
-            then
-                debugPrint "글자 수 미달"
-                debugPrint ${#msg}
-                debugPrint ${limit}
-                debugPrint "false : $cond2"
-                alrt="YOU ENTERED <$msg>\nPLEASE ENTER MORE THAN $limit CHARS.\n"
-            fi
-            ans=""
-            msg=""
-
-
-            # alertUpdate $msg $limit
-            apple_dialog "text" "${alrt}${warn}${ruleArr[${i}]}\n\nType${ansArr[$i]}"
-            if [ "$ans" = "Back" ]
-            then
-                i=$(( i-1 ))
-                break
-            fi
-        done
-
-        if [ -z $debug ]
-        then
-            record $msg
-        fi
     done
 
 
