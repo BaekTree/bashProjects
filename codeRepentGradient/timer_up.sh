@@ -1,6 +1,4 @@
 #! /usr/local/bin/bash
-# read $1
-# echo input : $1
 
 # # exit when any command fails
 # set -e
@@ -15,6 +13,17 @@ arg_sec=${args[0]}
 # arg_file=${args[3]} # 읽을 rules 파일
 # dFile=${args[4]}
 
+printUsage(){
+    echo -e "usage : ./timer_up.sh <seconds>. without argument, default is 5 secs."
+    echo -e "option : \n\t -d\n\t -f\n\t -l"
+    echo -e "option -d : "
+    echo -e "\t -d getRules : run only getRules function."
+    echo -e "\t -d all : run getRules and init, but not call hideAll and wait functions."
+    echo -e "option -f : "
+    echo -e "\t -f rules.txt : specific file data in data directory."
+    echo -e "option -l : enable log."
+}
+
 for (( t_arg_i=0; t_arg_i < ${#args[@]}; t_arg_i++ ))
 do
     if [ ${args[$t_arg_i]} = "-d" ]
@@ -22,21 +31,21 @@ do
         debug="-d"
         tmp_i=$(( $t_arg_i + 1 ))
         dFunc=${args[$tmp_i]}
+        (( t_arg_i++ ))
     elif [ ${args[$t_arg_i]} = "-f" ]
     then
         arg_file="-f"
         tmp_i=$(( $t_arg_i + 1 ))
         dFile=${args[$tmp_i]}
+        (( t_arg_i++ ))
+    elif [ ${args[$t_arg_i]} = "-l" ]
+    then
+        log="-l"
+    else
+        printUsage 
+        exit 0
     fi
 done
-
-# echo $debug
-# echo $dFunc
-# echo $arg_file
-# echo $dFile
-
-# exit 0
-
 
 if [ -z $arg_sec ]
 then
@@ -45,31 +54,18 @@ fi
 
 
 if [[ ! $arg_sec =~ ^[0-9]*$ ]]; then 
-    # init $1 seconds!
-    echo -e "usage : ./timer_up.sh <seconds>.\noption : -d for debug."
-    exit 0
-# else
-fi
-
-
-
-if [ $debug != "-d" ]
-then
-    echo -e "usage : ./timer_up.sh <seconds>.\noption : -d for debug"
+    printUsage
     exit 0
 fi
-# ascriptComm=osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Yes\", \"No\"} default button \"No\""
 
-
-
-curFile=$0
-if [[ $curFile = *"_up"* ]]
+scrpt_name=$0
+if [[ $scrpt_name = *"_up"* ]]
 then
     echo "This is in dev!"
-    source function_up.sh
+    source $DIR/function_up.sh
     file="$DIR/data/rules_up.txt"
 else
-    source function.sh
+    source $DIR/stable/function.sh
     file="$DIR/data/rules.txt"
 fi
 
@@ -110,7 +106,7 @@ then
         fi
         file="$DIR/data/$dFile"
     else
-        echo -e "usage : ./timer_up.sh <seconds>.\noption : \n-f specific files to get."
+        printUsage
         exit 0
     fi
 fi
@@ -133,207 +129,6 @@ else # debug 일때
         echo "run only getRules"
         getRules
     else
-        echo -e "usage : ./timer_up.sh <seconds>.\noption : \n-d getRules for run only getRules.\n-d all for run all with log and without hide and wait feature."
+        printUsage
     fi
 fi
-
-
-
-
-
-
-
-
-
-
-
-
-<< 'CASEYES'
-    apple_text $rule1
-
-    # rule 1
-    while [ "$res" != "button returned:Yes, text returned:DO NOT BE OBSESSED." ]
-    do
-        # echo $rule
-        apple_text "RULE 1 DO NOT BE OBSESSED. "
-    done
-
-    echo "RULE 1 pass."
-CASEYES
-
-<< 'TRY'
-
-<< 'RESULT'
-button returned
-Yes
- text returned
-하나님 감사합니다!
-RESULT
-
-
-    # echo ${arr[1]}
-    # echo ${arr[3]}
-    # echo $res
-    res=${arr[1]}
-    msg=${arr[3]}
-    # echo "Enter Rule 2"
-
-    while [ "$res" != "Yes" ]
-    do
-        apple_text "RULE 2 PRAYER. \nHIS HELP. HIS POWER. HIS KNOWLEDGE.\nGOD LOVES US.\nWhat did you pray?"
-    done
-
-
-    echo "RULE 2 pass."
-TRY
-
-
-
-
-
-
-
-
-<< "FUNC"
-
-apple_dialog(){
-    echo $1
-    $(osascript -e 'display dialog {$1}" buttons {"Yes", "No"} default button "No"')
-}
-
-apple_dialog
-
-FUNC
-
-<< "BRUTE"
-
-sec=$SECONDS
-while [ $SECONDS -lt 3 ]
-do
-    
-    if [ $sec -ne $SECONDS ]
-    then
-        sec=$SECONDS
-        echo $SECONDS
-    fi
-done
-# apple_dialog test
-SURETY="$(osascript -e 'display dialog 
-"RULE 1 DO NOT BE OBSESSED. 
- 
-RULE 2 PRAYER. 
-HIS HELP. HIS POWER. HIS KNOWLEDGE.
-GOD LOVES US.
- 
-RULE 3 TESTCASES 
- 
-RULE 4 STOP & REST 
-STOP & REST WHEN OBSESSED. STOP WHEN YOU ARE OBSESSED.  I REPEAT AGAIN. STOP WHEN YOU GET OBSESSED.  
- 
-RULE 5 PSEUDOCODE 
- 
-RULE 6 INITIALIZATION 
- 
-RULE 7 KEEP IT SIMPLE, YOU STUPID!
-IT’S A KISS.
-EASIER, SIMPLER, AND MORE LIKELY BRUTEFORCE THEN YOU THOUGHT"
-
- buttons {"Yes", "No"} default button "No"')"
-
-if [ "$SURETY" = "button returned:Yes" ]; then
-    echo "Yes, continue with partition."
-    rule="($(osascript -e 'display dialog "RULE 1 DO NOT BE OBSESSED. " default answer "" buttons {"Yes", "No"} default button "No"'))"
-
-    while [ $rule -ne "button returned:Yes, text returned:DO NOT BE OBSESSED." ]
-        do
-            echo $rule
-            rule="($(osascript -e 'display dialog "RULE 1 DO NOT BE OBSESSED. " default answer "" buttons {"Yes", "No"} default button "No"'))"
-        done
-
-    echo "RULE 1 pass."
-    if [ "$SURETY" = "button returned:Yes" ]; then
-    echo "Yes, continue with partition."
-    rule="($(osascript -e 'display dialog "RULE 1 DO NOT BE OBSESSED. " default answer "" buttons {"Yes", "No"} default button "No"'))"
-
-    while [ $rule -ne "button returned:Yes, text returned:DO NOT BE OBSESSED." ]
-        do
-            echo $rule
-            rule="($(osascript -e 'display dialog "RULE 1 DO NOT BE OBSESSED. " default answer "" buttons {"Yes", "No"} default button "No"'))"
-        done
-
-    echo "RULE 1 pass."
-    fi
-
-    
-    
-
-
-
-else
-    echo "No, cancel partition."
-fi
-BRUTE
-
-# while [ $(( SECONDS%3600 )) -eq 0 ]
-# do
-#     while [ $(( SECONDS%10 )) -eq 0 ]
-#     do
-#         echo $SECONDS
-#     done
-#     SURETY="$(osascript -e 'display dialog "RULE 1 DO NOT BE OBSESSED. 
-#  
-#     RULE 2 PRAYER. 
-#     HIS HELP. HIS POWER. HIS KNOWLEDGE.
-#     GOD LOVES US.
-#      
-#     RULE 3 TESTCASES 
-#      
-#     RULE 4 STOP & REST 
-#     STOP & REST WHEN OBSESSED. STOP WHEN YOU ARE OBSESSED.  I REPEAT AGAIN. STOP WHEN YOU GET OBSESSED.  
-#      
-#     RULE 5 PSEUDOCODE 
-#      
-#     RULE 6 INITIALIZATION 
-#      
-#     RULE 7 KEEP IT SIMPLE, YOU STUPID!
-#     IT’S A KISS.
-#     EASIER, SIMPLER, AND MORE LIKELY BRUTEFORCE THEN YOU THOUGHT" buttons {"Yes", "No"} default button "No"')"
-
-#     if [ "$SURETY" = "button returned:Yes" ]; then
-#         echo "Yes, continue with partition."
-#     else
-#         echo "No, cancel partition."
-#     fi
-# done
-
-
-<< 'DIALOG'
-
-SURETY="$(osascript -e 'display dialog "RULE 1 DO NOT BE OBSESSED. 
- 
-RULE 2 PRAYER. 
-HIS HELP. HIS POWER. HIS KNOWLEDGE.
-GOD LOVES US.
- 
-RULE 3 TESTCASES 
- 
-RULE 4 STOP & REST 
-STOP & REST WHEN OBSESSED. STOP WHEN YOU ARE OBSESSED.  I REPEAT AGAIN. STOP WHEN YOU GET OBSESSED.  
- 
-RULE 5 PSEUDOCODE 
- 
-RULE 6 INITIALIZATION 
- 
-RULE 7 KEEP IT SIMPLE, YOU STUPID!
-IT’S A KISS.
-EASIER, SIMPLER, AND MORE LIKELY BRUTEFORCE THEN YOU THOUGHT" buttons {"Yes", "No"} default button "No"')"
-
-if [ "$SURETY" = "button returned:Yes" ]; then
-    echo "Yes, continue with partition."
-else
-    echo "No, cancel partition."
-fi
-
-DIALOG
-
-
