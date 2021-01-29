@@ -24,7 +24,7 @@ printUsage(){
     echo -e "option -l : enable log."
 }
 
-for (( t_arg_i=0; t_arg_i < ${#args[@]}; t_arg_i++ ))
+for (( t_arg_i=1; t_arg_i < ${#args[@]}; t_arg_i++ ))
 do
     if [ ${args[$t_arg_i]} = "-d" ]
     then
@@ -42,6 +42,7 @@ do
     then
         log="-l"
     else
+        echo "You entered ${args[$t_arg_i]}. What did you mean?"
         printUsage 
         exit 0
     fi
@@ -59,7 +60,7 @@ if [[ ! $arg_sec =~ ^[0-9]*$ ]]; then
 fi
 
 scrpt_name=$0
-if [[ $scrpt_name = *"_up"* ]]
+if [[ $scrpt_name = *"_up"* ]] || [[ $scrpt_name = *"main.sh"* ]]
 then
     echo "This is in dev!"
     source $DIR/function_up.sh
