@@ -262,7 +262,7 @@ putTxtToArr(){
     # # str=${str%% *}
     # debugPrint "[putTxtToArr] : |$str|"
     # 기존 arr의 누적해왔던 값을 기존 arr에 쓴다.
-    splitBaseNum=800
+    splitBaseNum=500
 
     if [ ${#str} -gt $splitBaseNum ]
     then
@@ -718,10 +718,10 @@ REPEAT
                 msgArr[$i]=$msg
             fi
 
-            if [ -z $debug ]
-            then
-                record $msg
-            fi
+            # if [ -z $debug ]
+            # then
+            record $msg
+            # fi
         else # if already submit answers to God.
             debugPrint "[init] current dialog stat : ------------------------true : show mode------------------------"
 
