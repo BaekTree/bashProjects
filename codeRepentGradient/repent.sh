@@ -1,2 +1,4 @@
 #! /bin/bash
-nohup /Users/baek/project/bashProjects/codeRepentGradient/iterator_up.sh &
+source dir.sh
+
+nohup $DIR/iterator_up.sh &

@@ -2,8 +2,8 @@
 
 # # exit when any command fails
 # set -e
-
-DIR=/Users/baek/project/bashProjects/codeRepentGradient
+source dir.sh
+# DIR=/Users/baek/project/bashProjects/codeRepentGradient
 
 args=($@)
 
@@ -64,10 +64,10 @@ if [[ $scrpt_name = *"_up"* ]] || [[ $scrpt_name = *"main.sh"* ]]
 then
     echo "This is in dev!"
     source $DIR/function_up.sh
-    file="$DIR/data/rules_up.txt"
+    file="$DATA_DIR/rules_up.txt"
 else
     source $DIR/stable/function.sh
-    file="$DIR/data/rules.txt"
+    file="$DATA_DIR/rules.txt"
 fi
 
 echo -e "\n\n\n\n$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y)" 
@@ -99,13 +99,13 @@ if [ ! -z $arg_file ]
 then
     if [ $arg_file = "-f" -a ! -z $dFile ]
     then
-        dir_chk=$(ls $DIR/data/$dFile)
-        if [ "$dir_chk" != "$DIR/data/$dFile" ]
+        dir_chk=$(ls $DATA_DIR/$dFile)
+        if [ "$dir_chk" != "$DATA_DIR/$dFile" ]
         then
-            echo -e "no file exists named $DIR/data/$dFile" 
+            echo -e "no file exists named $DATA_DIR/$dFile" 
             exit 0
         fi
-        file="$DIR/data/$dFile"
+        file="$DATA_DIR/$dFile"
     else
         printUsage
         exit 0

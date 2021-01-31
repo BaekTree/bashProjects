@@ -164,7 +164,7 @@ record(){
 
 printArrs(){
     #print Arr
-    echo -e "\n\n\nprint all items"
+    echo -e "\n\n\n---------------------------------------------------------------------------------------------------------print all items--------------------------------------------------------------------------------------------------------------------------------------------"
     for (( i=0; i<${#ruleArr[@]}; i++ ))
     do
         
@@ -367,6 +367,8 @@ getRules(){
     while read -r line || [ -n "$line" ]; do
     # while read -r line;
     # do  
+        debugPrint "[getRules] read and acummulate : $line"
+
         if [[ $line == "" ]]
         then
             # if [ $newline_count -eq 0 ] # 연속된 개행을 받지 않는다.
@@ -389,10 +391,10 @@ getRules(){
                 
                 debugPrint "[getRules] : newline_count : now put to text : $newline_count"
                 newline_count=0
-                debugPrint "[getRules] : newline_count : init : $newline_count"
+                # debugPrint "[getRules] : newline_count : init : $newline_count"
                 putTxtToArr $arrIdx "$str"
                 str=""
-                fill_left_over $(( arrIdx+1 )) ${#allArr[@]}
+                # fill_left_over $(( arrIdx+1 )) ${#allArr[@]}
                 last_rule=${ruleArr[-1]}
 
                 ## 만약 여러 개행으로 하나의 rule+cont+ans+limit이 끝난다면? 그대로 이어서는 안된다. 새로 추가하도록 내버려 둬야 한다.
@@ -403,7 +405,6 @@ getRules(){
             fi
         fi
 
-        debugPrint "[getRules] read and acummulate : $line"
         if [[ $line == *"rule : "* ]]
         then
             # 새로 rule을 만났을 때, 입력 중인 내용이 있었으면 넣는다. 없으면 여기서는 pass. 
