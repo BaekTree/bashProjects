@@ -19,28 +19,32 @@ printUsage(){
     echo -e "option -d : "
     echo -e "\t -d getRules : run only getRules function."
     echo -e "\t -d all : run getRules and init, but not call hideAll and wait functions."
+    echo -e "option -df : erase all limit and ans "
     echo -e "option -f : "
     echo -e "\t -f rules.txt : specific file data in data directory."
     echo -e "option -l : enable log."
 }
 
-for (( t_arg_i=1; t_arg_i < ${#args[@]}; t_arg_i++ ))
+for (( t_arg_i=0; t_arg_i < ${#args[@]}; t_arg_i++ ))
 do
-    if [ ${args[$t_arg_i]} = "-d" ]
+
+    if [[ ${args[$t_arg_i]} =~ ^[0-9]*$ ]]; then 
+        arg_sec=${args[$t_arg_i]}
+    elif [[ ${args[$t_arg_i]} = "-d" ]] || [ ${args[$t_arg_i]} = "-df" ]
     then
-        debug="-d"
+        debug=${args[$t_arg_i]}
         tmp_i=$(( $t_arg_i + 1 ))
         dFunc=${args[$tmp_i]}
         (( t_arg_i++ ))
     elif [ ${args[$t_arg_i]} = "-f" ]
     then
-        arg_file="-f"
+        arg_file=${args[$t_arg_i]}
         tmp_i=$(( $t_arg_i + 1 ))
         dFile=${args[$tmp_i]}
         (( t_arg_i++ ))
     elif [ ${args[$t_arg_i]} = "-l" ]
     then
-        log="-l"
+        log=${args[$t_arg_i]}
     else
         echo "You entered ${args[$t_arg_i]}. What did you mean?"
         printUsage 
@@ -54,10 +58,6 @@ then
 fi
 
 
-if [[ ! $arg_sec =~ ^[0-9]*$ ]]; then 
-    printUsage
-    exit 0
-fi
 
 scrpt_name=$0
 if [[ $scrpt_name = *"_up"* ]] || [[ $scrpt_name = *"main.sh"* ]]
@@ -120,6 +120,11 @@ then
     getRules
     init
 else # debug 일때
+    echo "|----------------------------------------------------------------------------------------------------------------------|"
+    echo "|                                                                                                                      |"
+    echo "|                                           WELCOME TO CODE REPENT GRADIENT!                                           |"
+    echo "|                                                                                                                      |"
+    echo "|----------------------------------------------------------------------------------------------------------------------|"
     if [ $dFunc == "all" ]
     then
         echo "run all with debug"

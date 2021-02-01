@@ -1,3 +1,3 @@
-DIR=/Users/baek/project/bashProjects/codeRepentGradient/testing
+DIR=/Users/baek/project/bashProjects/codeRepentGradient
 
 DATA_DIR=/Users/baek/project/bashProjects/codeRepentGradient/data
