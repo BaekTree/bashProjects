@@ -1,6 +1,12 @@
 # origin_IFS=$IFS
+declare -a ruleArr=(r)
+declare -a contArr=(c)
+declare -a ansArr=(a)
+declare -a limitArr=(l)
+declare -a completeArr=(c)
+declare -a msgArr=(m)
 
-debugPrint(){
+log(){
     if [[ $log == "-l" ]]
     then
         echo -e "$1"
@@ -9,17 +15,17 @@ debugPrint(){
 
 updateVerses(){
     curDir=$(pwd)
-    debugPrint "[updateVerses] : move to bible dir"
+    log "[updateVerses] : move to bible dir"
     cd '/Users/baek/OneDrive/사진/삼성 갤러리/Pictures/Bible'
-    debugPrint "[updateVerses] : pwd: $(pwd)"
+    log "[updateVerses] : pwd: $(pwd)"
 
     v=$(ls)
     vArr=($v)
 
-    # debugPrint $[updateVerses] : {vArr[17]}
+    # log $[updateVerses] : {vArr[17]}
     numV=${#vArr[@]}
 
-    debugPrint "[updateVerses] : back to cur dir : $curDir"
+    log "[updateVerses] : back to cur dir : $curDir"
     cd ${curDir}
 }
 
@@ -31,9 +37,9 @@ viewVerse(){
     # closeVerse
 
     genVerseIDx
-    debugPrint "[viewVerse] opening ${vArr[${idxV}]}"
+    log "[viewVerse] opening ${vArr[${idxV}]}"
     open -a Preview "/Users/baek/OneDrive/사진/삼성 갤러리/Pictures/Bible/${vArr[${idxV}]}";
-    # $(sleep 10 || debugPrint 10 passed!) &
+    # $(sleep 10 || log 10 passed!) &
     osascript -e "tell application \"Preview\"
 	set bounds of front window to {768, 0, 1536, 960}
     end tell"
@@ -51,10 +57,10 @@ closeVerse(){
     pids=$(pgrep Preview)   
     if [ -z $pids ]
     then
-        debugPrint "[closeVerse] : no pids"
+        log "[closeVerse] : no pids"
     else
-        debugPrint "[closeVerse] : preview pids : ${pids}"
-        debugPrint "[closeVerse] : killing preview $pids"
+        log "[closeVerse] : preview pids : ${pids}"
+        log "[closeVerse] : killing preview $pids"
         kill -9 ${pids}
         sleep 0.5
     fi
@@ -78,7 +84,7 @@ apple_dialog(){
 }
 
 apple_dialog_text(){
-    debugPrint "[apple_dialog_text input]----------------------------------------:\n$1\n----------------------------------------\n"
+    log "[apple_dialog_text input]----------------------------------------:\n$1\n----------------------------------------\n"
     res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Submit To God\", \"Back\"} default answer \"\" default button \"Submit To God\"")
     # closeVerse;
     parseBtnAns $res
@@ -117,24 +123,24 @@ parseBtnAns(){
     priorIFS=$IFS
     IFS=$":,"
     local arg=($1)
-    debugPrint "[parseBtnAns] ARG : ${arg[@]}"
+    log "[parseBtnAns] ARG : ${arg[@]}"
 
     local a
     for a in ${arg[@]}
     do
-        debugPrint "[parseBtnAns] : arg array element : $a"
+        log "[parseBtnAns] : arg array element : $a"
         if [ ${a} = "Submit To God" -o ${a} = "Next" -o ${a} = "Back" ]
         then
             ans=${a}
-            debugPrint "[parseBtnAns] : ----------button answer is $ans----------"
+            log "[parseBtnAns] : ----------button answer is $ans----------"
         fi        
     done
     IFS=$priorIFS
 }
 
 parseTxt(){
-    debugPrint "[parseTxt] parseTxt function init."
-    debugPrint "[parseTxt] input arg : $1"
+    log "[parseTxt] parseTxt function init."
+    log "[parseTxt] input arg : $1"
     priorIFS=$IFS
     IFS=$",:"
     local arg=($1)
@@ -142,11 +148,11 @@ parseTxt(){
     local i
     for (( i=0; i<${#arg[@]}; i++ ))
     do
-        debugPrint "[parseTxt] arg element : ${arg[i]}"
+        log "[parseTxt] arg element : ${arg[i]}"
         if [ ${arg[i]} == " text returned" ]
         then
             msg=${arg[(( $i+1 ))]}
-            debugPrint "[parseTxt] : txt is $msg"
+            log "[parseTxt] : txt is $msg"
         fi
         
     done
@@ -164,7 +170,7 @@ record(){
 
 printArrs(){
     #print Arr
-    echo -e "\n\n\n---------------------------------------------------------------------------------------------------------print all items--------------------------------------------------------------------------------------------------------------------------------------------"
+    echo -e "\n\n\n------------------------------------------------------------------------------------------------------print all items------------------------------------------------------------------------------------------------------"
     for (( i=0; i<${#ruleArr[@]}; i++ ))
     do
         
@@ -193,8 +199,10 @@ printArrs(){
     echo size of ansArr : ${#ansArr[@]}
     echo size of limitArr : ${#limitArr[@]}
     echo size of completeArr : ${#completeArr[@]}
+    
+    echo 
+    echo $(date)
 
-    echo
 }
 
 
@@ -205,11 +213,10 @@ FILL
 
 fill_left_over(){
     # 새로운 rule을 만났을 때 넣을 값이 없던 arr들 채운다 : 남아있는 cont ans limit을 빈 값으로 넣는다.
-    # limit 값이 있었으면 order = 4, allArr.length = 4가 되어서 그냥 pass.
+    # limit 값이 있었으면 currentStage = 4, allArr.length = 4가 되어서 그냥 pass.
     local left_over_idx=$1
     local idx_until_this_idx=$2
-    debugPrint "[fill_left_over] functoin init----------"
-    debugPrint "[fill_left_over] new : from $left_over_idx to $idx_until_this_idx"
+    log "[fill_left_over] fill array index : from $left_over_idx to $idx_until_this_idx"
     for (( ; left_over_idx<$idx_until_this_idx; left_over_idx++ ))
     do
         local t=${allArr[$left_over_idx]}
@@ -220,10 +227,10 @@ fill_left_over(){
         then
             empty=0
         fi
+        log "[fill_left_over] array to be filled : $t, line=\" \""
         tmpArr+=($empty)
         # tmpArr+=("emptyNew")
-        debugPrint "[fill_left_over] t=$t, line=\" \""
-        debugPrint "[fill_left_over] ${tmpArr[@]}"
+        log "[fill_left_over] array append : |${tmpArr[*]}|"
     done
 }
 
@@ -231,28 +238,98 @@ splitSeg(){
     local cur_idx=$1
     local totalStr=$2
     local line_new=$3
-    putTxtToArr $cur_idx $totalStr
+    savePriorLinesToCurStageArr $cur_idx $totalStr
     totalStr=""
     fill_left_over $(( cur_idx+1 )) ${#allArr[@]}
     local last_rule=${ruleArr[-1]}
 }
 
+isLargeStr(){
+    local str=$1
+    splitBaseNum=500
 
-<< "WRITE"
-    
-WRITE
+    if [ ${#str} -gt $splitBaseNum ]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
 
-putTxtToArr(){
-    # 기존에 읽던 arr의 index : arrIdx.
+cleanseStrAndStore(){
+    local str="$1"
+    local curArr="$2"
+    log "[cleanseStrAndStore] : curArr : |$curArr|"
+
+
+    declare -n refArr=$curArr
+    log "[cleanseStrAndStore] : original : |$str|"
+   
+   
+    # local -n refArr="$2"
+    # local str="$1"
+    # local refArr="$2"
+    str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+    # str=${str%% *}
+    log "[cleanseStrAndStore] : final string : |$str|"
+    log "[cleanseStrAndStore] : arr : |${refArr[*]}|"
+    refArr+=("$str")
+    log "[cleanseStrAndStore] : array append result : |${refArr[*]}|"
+}
+
+splitLargeStrAndStore(){
+    local str="$1"
+    local curArr="$2"
+    while [ $(( ${#str} / $splitBaseNum )) -gt  0 ]
+    do
+        # echo $(( ${#str} / $splitBaseNum ))
+        log "[target] : |$str|"
+        frontSeg="${str:0:$splitBaseNum}"
+        log "[frontSeg] : |$frontSeg|"
+        endSeg="${str#"$frontSeg"}"
+        # endSeg="${str#$frontSeg}" # 제대로 잘라내지 못한다. 중간에 껴있는 space나 개행 때문에 통으로 인식하지 못한다. 숫자는 {}을 붙이고 문자는 ""을 붙여라!
+        log "[endSeg] : |$endSeg|"
+        # exit 0
+        ### 
+        # endSeg=${str:$splitBaseNum} # $splitBaseNum자부터 끝까지. 뒷부분이 된다.
+
+
+
+        # frontSeg=${str%$endSeg}
+        log "[savePriorLinesToCurStageArr] : cut $splitBaseNum chars : |$frontSeg|"
+
+        cleanseStrAndStore "$frontSeg" "$curArr"
+
+        # cleanStr=$(echo -e "$frontSeg" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+        # # str=${str%% *}
+        # log "[savePriorLinesToCurStageArr] :cleanStr: |$cleanStr|"
+
+        # refArr+=("$cleanStr")
+
+        fill_left_over $(( curStageArrIdx+1 )) ${#allArr[@]}
+        last_rule=${ruleArr[-1]}
+        ruleArr+=($last_rule)
+
+        str="$endSeg"
+        # echo "[str] $str"
+        # exit 0
+    done
+    cleanseStrAndStore "$str" "$curArr"
+
+}
+
+savePriorLinesToCurStageArr(){
+    # 기존에 읽던 arr의 index : curStageArrIdx.
     # 그 arr에 현재까지 내용을 넣는다.
     # priorIFS=$IFS
     # IFS=$origin_IFS
-    local arrIdx=$1
+    local curStageArrIdx=$1
     local str="$2"
-    local arr_by_idx=${allArr[$arrIdx]}
-    declare -n refArr=${arr_by_idx[@]}
-    debugPrint "[original] : $str"
-    # debugPrint "[putTxtToArr] : $str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
+    local curArr=${allArr[$curStageArrIdx]}
+    log "\n[savePriorLinesToCurStageArr]-----------------------------------------|"
+    log "                                                                      |"
+    log "[savePriorLinesToCurStageArr] : current array index: $curArr"
+    # log "[savePriorLinesToCurStageArr] : $str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
     # 앞뒤에 붙어있는 개행과 빈칸을 지운다. 
     # str="$(echo -e "$str" | sed '/^$/d')"
     # str=${str%%\\n*}# 작동 안함
@@ -260,54 +337,31 @@ putTxtToArr(){
     # str="$(echo -e "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba')"
     # str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
     # # str=${str%% *}
-    # debugPrint "[putTxtToArr] : |$str|"
+    log "[savePriorLinesToCurStageArr] : str : |$str|"
     # 기존 arr의 누적해왔던 값을 기존 arr에 쓴다.
-    splitBaseNum=500
+    # splitBaseNum=500
 
-    if [ ${#str} -gt $splitBaseNum ]
+    # echo "$str"
+    # echo "${#str}"
+
+    if isLargeStr "$str";
     then
-        while [ $(( ${#str} / $splitBaseNum )) -gt  0 ]
-        do
-            debugPrint "[target] : |$str|"
-            frontSeg="${str:0:$splitBaseNum}"
-            debugPrint "[frontSeg] : |$frontSeg|"
-            endSeg="${str#"$frontSeg"}"
-            # endSeg="${str#$frontSeg}" # 제대로 잘라내지 못한다. 중간에 껴있는 space나 개행 때문에 통으로 인식하지 못한다. 숫자는 {}을 붙이고 문자는 ""을 붙여라!
-            debugPrint "[endSeg] : |$endSeg|"
-            # exit 0
-            ### 
-            # endSeg=${str:$splitBaseNum} # $splitBaseNum자부터 끝까지. 뒷부분이 된다.
-
-
-
-            # frontSeg=${str%$endSeg}
-            debugPrint "[putTxtToArr] : cut $splitBaseNum chars : |$frontSeg|"
-
-            frontSeg=$(echo -e "$frontSeg" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
-            # str=${str%% *}
-            debugPrint "[putTxtToArr] : |$frontSeg|"
-
-            refArr+=("$frontSeg")
-
-            fill_left_over $(( arrIdx+1 )) ${#allArr[@]}
-            last_rule=${ruleArr[-1]}
-            ruleArr+=($last_rule)
-
-            str="$endSeg"
-            # echo "[str] $str"
-            # exit 0
-        done
+        # echo $(( ${#str} / $splitBaseNum ))
+        splitLargeStrAndStore "$str" "$curArr"
     fi
 
-    str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
-    # str=${str%% *}
-    debugPrint "[putTxtToArr] : |$str|"
-    refArr+=("$str")
+    # str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+    # # str=${str%% *}
+    # log "[savePriorLinesToCurStageArr] : |$str|"
+    # refArr+=("$str")
 
+
+    cleanseStrAndStore "$str" "$curArr"
     # IFS=$priorIFS
-<< "SEG"
-    
-SEG
+
+    log "                                                                      |"
+    log "----------------------------------------------------------------------|\n"
+
 
 }
 
@@ -317,26 +371,14 @@ SEG
 
 READ
 
-declare -a ruleArr=()
-declare -a contArr=()
-declare -a ansArr=()
-declare -a limitArr=()
-declare -a completeArr=()
-declare -a msgArr=()
+
 
 
 allArr=( ruleArr contArr ansArr limitArr completeArr)
 lenAllArr=${#allArr[@]}
 
-getRules(){
-    # 읽은 뒤 쪼갤 때 newline단위로 줄을 구분해야 한다.
-    priorIFS=$IFS
-    IFS=$'\n'
 
-
-
-
-
+assignEachcurStagecurStageArrIdx(){
     #findLimitArr idx
     local find_idx
     for (( find_idx=0; find_idx<${#allArr[@]}; find_idx++ ))
@@ -355,178 +397,229 @@ getRules(){
             lmt_idx=$find_idx
         fi
     done
+}
 
+initializeReading(){
+    assignEachcurStagecurStageArrIdx
     #limit ruleArr idx
-    order=${#allArr[@]}
-    arrIdx=0
-
+    currentStage=${#allArr[@]}
+    curStagecurStageArrIdx=0
     ruleNum=1
-    local str=""  
+    str=""  
     newline_count=0
-    
-    while read -r line || [ -n "$line" ]; do
-    # while read -r line;
-    # do  
-        debugPrint "[getRules] read and acummulate : $line"
+}
 
-        if [[ $line == "" ]]
+
+isMeetNewLine(){
+    local line=$1
+
+    if [[ $line == "" ]]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
+isTransitionNextArr(){
+    local line="$1"
+    log "[isTransitionNextArr] : input : |$line|"
+    if [[ $line == *"rule : "* ]] || [[ $line == *"cont : "* ]] || [[ $line == *"ans : "* ]] || [[ $line == *"limit : "* ]]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
+copyRuleForNextPrgp(){
+
+        fill_left_over $(( curStageArrIdx+1 )) ${#allArr[@]}
+        last_rule=${ruleArr[-1]}
+        
+        ## 만약 여러 개행으로 하나의 rule+cont+ans+limit이 끝난다면? 그대로 이어서는 안된다. 새로 추가하도록 내버려 둬야 한다.
+        if [[ $line != *"rule : "* ]]
         then
-            # if [ $newline_count -eq 0 ] # 연속된 개행을 받지 않는다.
-            # then
-                str+="\n"
-            # fi
-            newline_count=$(( newline_count+1 ))
-            # debugPrint "[getRules] : newline_count : meet new line: $newline_count"
-            # if [ newline_count -eq 2 ]
-            # then
-
-            # fi
-            continue
-        else
-            if [ $newline_count -eq 1 ]
-            then
-                newline_count=0
-            elif [ $newline_count -gt 1 ]
-            then
-                
-                debugPrint "[getRules] : newline_count : now put to text : $newline_count"
-                newline_count=0
-                # debugPrint "[getRules] : newline_count : init : $newline_count"
-                putTxtToArr $arrIdx "$str"
-                str=""
-                # fill_left_over $(( arrIdx+1 )) ${#allArr[@]}
-                last_rule=${ruleArr[-1]}
-
-                ## 만약 여러 개행으로 하나의 rule+cont+ans+limit이 끝난다면? 그대로 이어서는 안된다. 새로 추가하도록 내버려 둬야 한다.
-                if [[ $line != *"rule : "* ]]
-                then
-                    ruleArr+=($last_rule)
-                fi
-            fi
+            ruleArr+=($last_rule)
         fi
+}
 
+detectPrghAndSavePriorStr(){
+    local priorAppendStr="$1"
+    local line="$2"
+    log "[getRules] : face a paragraph : detected continuous newlines : $newline_count"
+    newline_count=0
+    # log "[getRules] : newline_count : init : $newline_count"
+    savePriorLinesToCurStageArr $curStageArrIdx "$priorAppendStr"
+    priorAppendStr=""
+
+    if ! isTransitionNextArr "$line";
+    then
+        copyRuleForNextPrgp
+    fi
+
+    echo "$priorAppendStr"
+
+}
+
+# isFaceParagraphThenSplitAndStore(){
+#     if isMeetNewLine "$line";
+#     then
+#         if [ $newline_count -eq 0 ] # 연속된 개행을 받지 않는다.
+#         then
+#             str+="\n"
+#         fi
+#         newline_count=$(( newline_count + 1))
+#         # log "[getRules] : newline_count : meet new line: $newline_count"
+
+#         continue
+#     else
+#         if [ $newline_count -eq 1 ]
+#         then
+#             newline_count=0
+#         elif [ $newline_count -gt 1 ]
+#         then
+#             detectPrghAndSavePriorStr
+#         fi
+#     fi
+# }
+
+isFirstLine(){
+    if [[ "$str" == "" ]]
+    then
+        # echo 0
+        return 0
+    else
+        # echo 1
+        return 1
+    fi
+}
+
+
+
+appendEachLineAndSave(){
+    local priorAppendStr="$1"
+    local line="$2"
+    log "[appendEachLineAndSave] read and acummulate : $line"
+    log "[appendEachLineAndSave] priorAppendStr input : $priorAppendStr"
+    # if [[ $line == *"rule : "* ]]
+    # then
+        # 새로 rule을 만났을 때, 입력 중인 내용이 있었으면 넣는다. 없으면 여기서는 pass. 
+        # 기존 것을 그 arr에 쓰고 rule을 쓸 준비!
+        # 맨 처음에 어차피 넣을게 없다. 
+
+        
+
+        # rule으로 시작하고, 방금 줄은 str에 입력했으니 이제 계속 누적을 하고, rule이 아닌 줄을 만났을 때 ruleArr에 넣는다!
+        # return
+
+    # 이 부분의 역할 : 처음 rule cont ans limit을 발견했을 때 모드 전환. 새로운 arr에 저장한다고 인식해야 한다.
+    # 기존 arr의 내용을 쓰는 부분
+    # 내용 중간의 개행들은 살려두어야 하지만, 마지막 줄 이후에 다른 arr을 만나기까지 딸려오는 개행들은 지워야 한다.
+    # sed을 사용 : s/*\n$//이 잘 안된다. sed는 개행을 기준으로 해서. 그래서... sed를 더 깊게... ba 사용.
+    if isTransitionNextArr "$line";
+    then
+        # 기존에 읽던 arr의 index : curStageArrIdx.
+        # 그 arr에 현재까지 내용을 넣는다.
+
+        # firstLine! dang!
+        if [[ ! -z $priorAppendStr ]] || [[ "$priorAppendStr" != "" ]]
+        then
+            savePriorLinesToCurStageArr $curStageArrIdx "$priorAppendStr"
+        fi
+        currentStage=$(( currentStage + 1 ))
+
+        # 새로운 arr을 쓰기 위해 priorAppendStr을 모으기 "시작". 다른 arr가 나올 때 모아둔 priorAppendStr을 저장한다.
         if [[ $line == *"rule : "* ]]
         then
-            # 새로 rule을 만났을 때, 입력 중인 내용이 있었으면 넣는다. 없으면 여기서는 pass. 
-            # 기존 것을 그 arr에 쓰고 rule을 쓸 준비!
-            if [ "$str" != "" ]
-            then
-                putTxtToArr $arrIdx "$str"
-            fi
+            # savePriorLinesToCurStageArr $curStageArrIdx "$priorAppendStr"
+            # fi
             # echo
+            if ! isFirstLine;
+            # if [[ "$priorAppendStr" != "" ]]
+            then
+                # 직전에 쓰고 있던 값에서 rule으로 바뀌었으니 더해준다. 더 이상 기존의 currentStage가 아니다!
+                # currentStage=$(( currentStage + 1 ))
+                fill_left_over $currentStage $lenAllArr
+            fi
 
-            # 직전에 쓰고 있던 값에서 rule으로 바뀌었으니 더해준다. 더 이상 기존의 order가 아니다!
-            order=$(( order + 1 ))
-
-            arrIdx=$rule_idx
+            curStageArrIdx=$rule_idx
             line="${line#"rule : "}"
             rules+="RULE ${ruleNum} : $line\n\n"
 
             #지금 rule이 막 시작했으므로 초기화
-            str=""
-            str+="RULE ${ruleNum} : $line\n"
+            line="RULE ${ruleNum} : $line"
             ruleNum=$(( ruleNum + 1 ))
-            
+
             # 새로운 rule을 만났을 때 넣을 값이 없던 arr들 채운다 : 남아있는 cont ans limit을 빈 값으로 넣는다.
-            # limit 값이 있었으면 order = 4, allArr.length = 4가 되어서 그냥 pass.
-            fill_left_over $order $lenAllArr
+            # limit 값이 있었으면 currentStage = 4, allArr.length = 4가 되어서 그냥 pass.
 
             # rule부터 다시 새로 시작!
-            order=0
-
-            # rule으로 시작하고, 방금 줄은 str에 입력했으니 이제 계속 누적을 하고, rule이 아닌 줄을 만났을 때 ruleArr에 넣는다!
-            continue
-
-        # 이 부분의 역할 : 처음 rule cont ans limit을 발견했을 때 모드 전환. 새로운 arr에 저장한다고 인식해야 한다.
-        # 기존 arr의 내용을 쓰는 부분
-        # 내용 중간의 개행들은 살려두어야 하지만, 마지막 줄 이후에 다른 arr을 만나기까지 딸려오는 개행들은 지워야 한다.
-        # sed을 사용 : s/*\n$//이 잘 안된다. sed는 개행을 기준으로 해서. 그래서... sed를 더 깊게... ba 사용.
-        elif [[ $line == *"cont : "* ]] || [[ $line == *"ans : "* ]] || [[ $line == *"limit : "* ]]
+            currentStage=0
+        elif [[ $line == *"cont : "* ]]
         then
-            # 기존에 읽던 arr의 index : arrIdx.
-            # 그 arr에 현재까지 내용을 넣는다.
-            putTxtToArr $arrIdx "$str"
-
-            order=$(( order + 1 ))
-
-             # 새로운 arr을 쓰기 위해 str을 모으기 "시작". 다른 arr가 나올 때 모아둔 str을 저장한다.
-            if [[ $line == *"cont : "* ]]
-            then
-                # 새로운 종류의 arr을 시작하니까 arrIdx을 이 arr의 고유 index으로 다시 설정해준다.
-                arrIdx=$cont_idx
-                line=("${line#"cont : "}")
-            elif [[ $line == *"ans : "* ]] # user input single line as answer.
-            then
-                arrIdx=$ans_idx
-                line=("${line#"ans : "}")
-            elif [[ $line == *"limit : "* ]]
-            then
-                arrIdx=$lmt_idx
-                line=("${line#"limit : "}")
-            fi
-
-            # 새로 arr에 넣을 str을 초기화. 여기에 계속 누적
-            str=""
+            # 새로운 종류의 arr을 시작하니까 curStageArrIdx을 이 arr의 고유 index으로 다시 설정해준다.
+            curStageArrIdx=$cont_idx
+            line=("${line#"cont : "}")
+        elif [[ $line == *"ans : "* ]] # user input single line as answer.
+        then
+            curStageArrIdx=$ans_idx
+            line=("${line#"ans : "}")
+        elif [[ $line == *"limit : "* ]]
+        then
+            curStageArrIdx=$lmt_idx
+            line=("${line#"limit : "}")
         fi
-
-        #방금 읽은 줄을 str에 누적해서 추가!
-        str+="$line\n"
+        priorAppendStr=""
 
 
-
-
-
+        # 새로 arr에 넣을 priorAppendStr을 초기화. 여기에 계속 누적
+        # priorAppendStr=""
 
         # rule, cont, ans, limit 순서인데 건너 뛰었을 때, 중간의 arr들을 빈값으로 넣는다.
-        # order을 통해서 현재 순서를 파악한다.
-        # arrIdx는 새로운 종류의 arr을 만났을 때 해당 arr의 값을 부여.
-        # order과 arrIdx을 비교한다. 새로운 arr을 만날 때마다 order과 arridx을 변화시킨다.
-        # 새로운 arr을 만나면 order은 1씩 증가하고, arrIdx는 해당 arr의 index을 부여.
-        # 만약 건너뛴게 없다면 order과 arrIdx가 동일하게 1씩 증가. 만약 건너뛰었다면 그만큼 차이가 발생!
+        # currentStage을 통해서 현재 순서를 파악한다.
+        # curStageArrIdx는 새로운 종류의 arr을 만났을 때 해당 arr의 값을 부여.
+        # currentStage과 curStageArrIdx을 비교한다. 새로운 arr을 만날 때마다 currentStage과 curStageArrIdx을 변화시킨다.
+        # 새로운 arr을 만나면 currentStage은 1씩 증가하고, curStageArrIdx는 해당 arr의 index을 부여.
+        # 만약 건너뛴게 없다면 currentStage과 curStageArrIdx가 동일하게 1씩 증가. 만약 건너뛰었다면 그만큼 차이가 발생!
         # 그 인덱스들 사이의 arr에 빈값을 부여!
-        # echo "----------order : $order and arrIdx : $arrIdx-----------"
-        if [ $order -lt $arrIdx ]
+        # echo "----------currentStage : $currentStage and curStageArrIdx : $curStageArrIdx-----------"
+        if [ $currentStage -lt $curStageArrIdx ]
         then
-            debugPrint "[getRules] runeNum=$ruleNum"
-            debugPrint "[getRules] skip : from $order to $arrIdx"
+            log "[appendEachLineAndSave] runeNum=$ruleNum"
+            log "[appendEachLineAndSave] skip : from $currentStage to $curStageArrIdx"
 
-            fill_left_over $order $arrIdx
-            # 빈 arr들을 채웠으니 다시 order을 arrIdx와 동일하게 맞춰준다!
-            order=$arrIdx
+            fill_left_over $currentStage $curStageArrIdx
+            # 빈 arr들을 채웠으니 다시 currentStage을 curStageArrIdx와 동일하게 맞춰준다!
+            currentStage=$curStageArrIdx
         fi
 
 
-        # if [ $order -gt 3 ]
+        # if [ $currentStage -gt 3 ]
         # then
-        #     order=0
+        #     currentStage=0
         # fi
-    done < $file
+    fi
 
-    # shell에서 마지막 줄을 읽지 않는다. 
-    # c 기준으로 텍스트는 개행문자로 끝이 나야 한다. 그게 아니면 에러를 발생시키고 마지막 while을 실행하지 않는다.
-    # https://stackoverflow.com/questions/12916352/shell-script-read-missing-last-line
-    # 그래서... 
+    #방금 읽은 줄을 priorAppendStr에 누적해서 추가!
+    priorAppendStr+="$line\n"
 
+    echo "$priorAppendStr"
 
-    debugPrint "[getRules] reading done. fill left over"
-    putTxtToArr $arrIdx "$str"
+}
 
-    # 마지막 오브 마지막 limit은 다른 arr을 만나지 않는다. 마지막 줄 str을 저장해준다.
-    fill_left_over $order $lenAllArr
+logResultOption(){
 
-    
-
-
-    if [[ ! -z $debug ]] && [[ $debug = "-d" ]]
+    if [[ ! -z $debug ]] && [[ $debug = "-df" ]]
     then
         for (( lim_i=0; lim_i < ${#limitArr[@]}; lim_i++ ))
         do
-            debugPrint "[getRules] : init limitArr."
+            log "[getRules] : init limitArr."
             limitArr[$lim_i]=0
         done
         for (( lim_i=0; lim_i < ${#ansArr[@]}; lim_i++ ))
         do
-            debugPrint "[getRules] : init ansArr."
+            log "[getRules] : init ansArr."
             ansArr[$lim_i]=" "
         done
     fi
@@ -535,6 +628,74 @@ getRules(){
     then
         printArrs
     fi
+}
+
+finishLastLine(){
+
+
+    log "[getRules] reading done. fill left over"
+    savePriorLinesToCurStageArr $curStageArrIdx "$str"
+
+    # 마지막 오브 마지막 limit은 다른 arr을 만나지 않는다. 마지막 줄 str을 저장해준다.
+    fill_left_over $currentStage $lenAllArr
+}
+
+getRules(){
+    # 읽은 뒤 쪼갤 때 newline단위로 줄을 구분해야 한다.
+    priorIFS=$IFS
+    IFS=$'\n'
+
+
+
+
+    assignEachcurStagecurStageArrIdx
+    initializeReading
+
+    local priorAppendStr
+    while read -r line || [ -n "$line" ]; do
+    # while read -r line;
+    # do  
+        
+        if isMeetNewLine "$line";
+        then
+            if [ $newline_count -eq 0 ] # 연속된 개행을 받지 않는다.
+            then
+                priorAppendStr+="\n"
+            fi
+            newline_count=$(( newline_count + 1))
+            # log "[getRules] : newline_count : meet new line: $newline_count"
+
+            continue
+        else
+            if [ $newline_count -eq 1 ]
+            then
+                newline_count=0
+            elif [ $newline_count -gt 1 ]
+            then
+                priorAppendStr="$(detectPrghAndSavePriorStr "$priorAppendStr" "$line")"
+            fi
+        fi
+        
+        priorAppendStr="$(appendEachLineAndSave "$priorAppendStr" "$line")"
+        echo "-----------------$priorAppendStr"
+
+        
+    done < $file
+
+    # shell에서 마지막 줄을 읽지 않는다. 
+    # c 기준으로 텍스트는 개행문자로 끝이 나야 한다. 그게 아니면 에러를 발생시키고 마지막 while을 실행하지 않는다.
+    # https://stackoverflow.com/questions/12916352/shell-script-read-missing-last-line
+    # 그래서... 
+    # finishLastLine
+    log "[getRules] reading done. fill left over"
+    savePriorLinesToCurStageArr $curStageArrIdx "$priorAppendStr"
+
+    # 마지막 오브 마지막 limit은 다른 arr을 만나지 않는다. 마지막 줄 str을 저장해준다.
+    fill_left_over $currentStage $lenAllArr
+
+    
+    logResultOption
+
     # echo $rules
     IFS=$priorIFS
 
@@ -549,7 +710,7 @@ INIT
 
 init(){
     updateVerses
-    debugPrint "[init] ${numV} verses exist."
+    log "[init] ${numV} verses exist."
 
     IFS=$'\n'
 
@@ -604,16 +765,16 @@ REPEAT
     record "\n\n\n\n\n\n\n$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y) "
 
 
-    debugPrint "[init] the number of rules : ${#ruleArr[@]}"
+    log "[init] the number of rules : ${#ruleArr[@]}"
     local i
     for (( i=0; i<${#ruleArr[@]}; i++ ))
     do
 
 
 
-        debugPrint "----------------------------------------\n[init] Enter Rule ${i}"
-        debugPrint "[init] rules : ${ruleArr[${i}]}\n\n"
-        debugPrint "[init] cont : ${contArr[${i}]}"
+        log "----------------------------------------\n[init] Enter Rule ${i}"
+        log "[init] rules : ${ruleArr[${i}]}\n\n"
+        log "[init] cont : ${contArr[${i}]}"
 
         # r=rule${i}
         # c=cont${i}
@@ -621,7 +782,7 @@ REPEAT
         # echo -e "${!r}\n${!c}"
         
         correctRes="${ansArr[$i]}"
-        debugPrint "correct response : $correctRes"
+        log "correct response : $correctRes"
         resStr="PLEASE TYPE <$correctRes>"
 
         contents="${ruleArr[${i}]}\n\n${contArr[${i}]}"
@@ -638,7 +799,7 @@ REPEAT
         then
             contents+="\n$resStr"
         fi
-        debugPrint "[init] contents : $contents\n----------------------------------------"
+        log "[init] contents : $contents\n----------------------------------------"
 
 
         
@@ -646,14 +807,14 @@ REPEAT
         if [ ${completeArr[$i]} = " " ]
         then
             backFlag=0
-            debugPrint "[init] current dialog pass stat : ------------------------false------------------------"
+            log "[init] current dialog pass stat : ------------------------false------------------------"
             apple_dialog_text "$contents"
-            debugPrint "[init] parsed button from user : $ans"
-            debugPrint "[init] parsed answer from user : $msg"
+            log "[init] parsed button from user : $ans"
+            log "[init] parsed answer from user : $msg"
 
             if [ "$ans" = "Back" ]
             then
-                debugPrint "[init] button stat------------------------pressBack------------------------"
+                log "[init] button stat------------------------pressBack------------------------"
                 i=$(( i-2 ))
                 if [ $i -lt 0 ]
                 then
@@ -675,19 +836,19 @@ REPEAT
                     alrt=""
                     if [ "$correctRes" != " " -a "${msg^^}" != "$correctRes" ]
                     then
-                        debugPrint "[init] while loop stat : 글자가 틀렸다."
-                        debugPrint "[init] while loop stat : 입력한 글자 : ${msg^^}"
-                        debugPrint "[init] while loop stat : 입력해야 하는 글자 : /$correctRes/"
+                        log "[init] while loop stat : 글자가 틀렸다."
+                        log "[init] while loop stat : 입력한 글자 : ${msg^^}"
+                        log "[init] while loop stat : 입력해야 하는 글자 : /$correctRes/"
                         alrt="YOU ENTERED <$msg>\nPLEASE ENTER <$correctRes>.\n"
 
-                        # debugPrint "[init] while loop stat : false : $cond1"
+                        # log "[init] while loop stat : false : $cond1"
                     # fi
                     elif [ "$correctRes" = " " -a ${#msg} -lt ${limit} ]
                     then
-                        debugPrint "[init] while loop stat : 글자 수 미달"
-                        debugPrint "[init] while loop stat : ${#msg}"
-                        debugPrint "[init] while loop stat : ${limit}"
-                        debugPrint "[init] while loop stat : false : $cond2"
+                        log "[init] while loop stat : 글자 수 미달"
+                        log "[init] while loop stat : ${#msg}"
+                        log "[init] while loop stat : ${limit}"
+                        log "[init] while loop stat : false : $cond2"
                         alrt="YOU ENTERED <$msg>\nPLEASE ENTER MORE THAN $limit CHARS.\n"
                     fi
                     ans=""
@@ -698,7 +859,7 @@ REPEAT
                     apple_dialog_text "${alrt}${warn}${ruleArr[${i}]}\n\nType$correctRes"
                     if [ "$ans" = "Back" ]
                     then
-                        debugPrint "[init] button stat : ------------------------pressBack------------------------"
+                        log "[init] button stat : ------------------------pressBack------------------------"
                         i=$(( i-2 ))
                         if [ $i -lt 0 ]
                         then
@@ -714,8 +875,8 @@ REPEAT
             if [[ $backFlag == 0 ]]
             then
                 completeArr[$i]="true"
-                debugPrint "[init] current dialog stat : ------------------------complete ${i}!------------------------"
-                debugPrint "[init] dialog stat update: ${completeArr[@]}"
+                log "[init] current dialog stat : ------------------------complete ${i}!------------------------"
+                log "[init] dialog stat update: ${completeArr[@]}"
                 msgArr[$i]=$msg
             fi
 
@@ -724,7 +885,7 @@ REPEAT
             record $msg
             # fi
         else # if already submit answers to God.
-            debugPrint "[init] current dialog stat : ------------------------true : show mode------------------------"
+            log "[init] current dialog stat : ------------------------true : show mode------------------------"
 
             contents+="\nAnswer : ${msgArr[$i]}"
 
@@ -737,14 +898,14 @@ REPEAT
 
             if [ "$ans" = "Back" ]
             then
-                debugPrint "[init] current button stat : ------------------------pressBack------------------------"
+                log "[init] current button stat : ------------------------pressBack------------------------"
                 i=$(( i-2 ))
                 if [ $i -lt 0 ]
                 then
                     i=-1
                 fi
             else # when press Next
-                debugPrint "[init] current button stat : ------------------------pressNext------------------------"
+                log "[init] current button stat : ------------------------pressNext------------------------"
                 continue
             fi
 
