@@ -213,7 +213,6 @@ FILL
 
 fill_left_over(){
     # 새로운 rule을 만났을 때 넣을 값이 없던 arr들 채운다 : 남아있는 cont ans limit을 빈 값으로 넣는다.
-    # limit 값이 있었으면 currentStage = 4, allArr.length = 4가 되어서 그냥 pass.
     local left_over_idx=$1
     local idx_until_this_idx=$2
     log "[fill_left_over] fill array index : from $left_over_idx to $idx_until_this_idx"
@@ -399,11 +398,33 @@ assignEachcurStagecurStageArrIdx(){
     done
 }
 
+# currentStage
+# curStagecurStageArrIdx=0
+CUR_READ_STAGE=${#allArr[@]}
+CUR_READ_ARR_IDX=0
+
+getCurReadStage(){
+    echo "$CUR_READ_STAGE"
+}
+
+setCurReadStage(){
+    local st="$1"
+    CUR_READ_STAGE="$st"
+}
+
+getCurReadArrIdx(){
+    echo "$CUR_READ_ARR_IDX"
+}
+
+setCurReadArrIdx(){
+    local idx="$s1"
+    CUR_READ_ARR_IDX=$idx
+}
+
 initializeReading(){
     assignEachcurStagecurStageArrIdx
     #limit ruleArr idx
-    currentStage=${#allArr[@]}
-    curStagecurStageArrIdx=0
+    
     ruleNum=1
     str=""  
     newline_count=0
@@ -484,8 +505,9 @@ detectPrghAndSavePriorStr(){
 #     fi
 # }
 
-isFirstLine(){
-    if [[ "$str" == "" ]]
+isValidLine(){
+    local apdStr="$1"
+    if [[ ! -z $apdStr ]] || [[ "$apdStr" != "" ]]
     then
         # echo 0
         return 0
@@ -496,47 +518,34 @@ isFirstLine(){
 }
 
 
+APD_STR=""
 
-appendEachLineAndSave(){
-    local priorAppendStr="$1"
-    local line="$2"
-    log "[appendEachLineAndSave] read and acummulate : $line"
-    log "[appendEachLineAndSave] priorAppendStr input : $priorAppendStr"
-    # if [[ $line == *"rule : "* ]]
-    # then
-        # 새로 rule을 만났을 때, 입력 중인 내용이 있었으면 넣는다. 없으면 여기서는 pass. 
-        # 기존 것을 그 arr에 쓰고 rule을 쓸 준비!
-        # 맨 처음에 어차피 넣을게 없다. 
+clearApdStr(){
+    APD_STR=""
+}
 
-        
+getApdStr(){
+    echo "$APD_STR"
+}
 
-        # rule으로 시작하고, 방금 줄은 str에 입력했으니 이제 계속 누적을 하고, rule이 아닌 줄을 만났을 때 ruleArr에 넣는다!
-        # return
+appendApdStr(){
+    local s="$1"
+    APD_STR+="$s"
+}
 
-    # 이 부분의 역할 : 처음 rule cont ans limit을 발견했을 때 모드 전환. 새로운 arr에 저장한다고 인식해야 한다.
-    # 기존 arr의 내용을 쓰는 부분
-    # 내용 중간의 개행들은 살려두어야 하지만, 마지막 줄 이후에 다른 arr을 만나기까지 딸려오는 개행들은 지워야 한다.
-    # sed을 사용 : s/*\n$//이 잘 안된다. sed는 개행을 기준으로 해서. 그래서... sed를 더 깊게... ba 사용.
-    if isTransitionNextArr "$line";
-    then
-        # 기존에 읽던 arr의 index : curStageArrIdx.
-        # 그 arr에 현재까지 내용을 넣는다.
+startCollectNewApdStrUntilTransNewArr(){
+    # local currentStage="$1"
+    # local line="$2"
+    # local curStageArrIdx="$3"
 
-        # firstLine! dang!
-        if [[ ! -z $priorAppendStr ]] || [[ "$priorAppendStr" != "" ]]
-        then
-            savePriorLinesToCurStageArr $curStageArrIdx "$priorAppendStr"
-        fi
-        currentStage=$(( currentStage + 1 ))
 
-        # 새로운 arr을 쓰기 위해 priorAppendStr을 모으기 "시작". 다른 arr가 나올 때 모아둔 priorAppendStr을 저장한다.
+    # 새로운 arr을 쓰기 위해 priorAppendStr을 모으기 "시작". 다른 arr가 나올 때 모아둔 priorAppendStr을 저장한다.
         if [[ $line == *"rule : "* ]]
         then
             # savePriorLinesToCurStageArr $curStageArrIdx "$priorAppendStr"
             # fi
             # echo
-            if ! isFirstLine;
-            # if [[ "$priorAppendStr" != "" ]]
+            if isValidLine "$apdStr";
             then
                 # 직전에 쓰고 있던 값에서 rule으로 바뀌었으니 더해준다. 더 이상 기존의 currentStage가 아니다!
                 # currentStage=$(( currentStage + 1 ))
@@ -570,7 +579,45 @@ appendEachLineAndSave(){
             curStageArrIdx=$lmt_idx
             line=("${line#"limit : "}")
         fi
-        priorAppendStr=""
+
+        clearApdStr
+}
+
+
+appendEachLineAndSave(){
+    # local priorAppendStr="$1"
+    local line="$1"
+    # local priorAppendStr
+    log "[appendEachLineAndSave] read and acummulate : $line"
+    # log "[appendEachLineAndSave] priorAppendStr input : $priorAppendStr"
+    # if [[ $line == *"rule : "* ]]
+    # then
+        # 새로 rule을 만났을 때, 입력 중인 내용이 있었으면 넣는다. 없으면 여기서는 pass. 
+        # 기존 것을 그 arr에 쓰고 rule을 쓸 준비!
+        # 맨 처음에 어차피 넣을게 없다. 
+
+        
+
+        # rule으로 시작하고, 방금 줄은 str에 입력했으니 이제 계속 누적을 하고, rule이 아닌 줄을 만났을 때 ruleArr에 넣는다!
+        # return
+
+    # 이 부분의 역할 : 처음 rule cont ans limit을 발견했을 때 모드 전환. 새로운 arr에 저장한다고 인식해야 한다.
+    # 기존 arr의 내용을 쓰는 부분
+    # 내용 중간의 개행들은 살려두어야 하지만, 마지막 줄 이후에 다른 arr을 만나기까지 딸려오는 개행들은 지워야 한다.
+    # sed을 사용 : s/*\n$//이 잘 안된다. sed는 개행을 기준으로 해서. 그래서... sed를 더 깊게... ba 사용.
+    if isTransitionNextArr "$line";
+    then
+        # 기존에 읽던 arr의 index : curStageArrIdx.
+        # 그 arr에 현재까지 내용을 넣는다.
+        currentStage=$(( currentStage + 1 ))
+
+        local apdStr="$(getApdStr)"
+        if isValidLine "$apdStr";#invalid when first line of txt. apdStr contains nothing, so empty string is put to ruleArr.
+        then
+            savePriorLinesToCurStageArr $curStageArrIdx "$apdStr"
+        fi
+
+        startCollectNewApdStrUntilTransNewArr
 
 
         # 새로 arr에 넣을 priorAppendStr을 초기화. 여기에 계속 누적
@@ -602,9 +649,9 @@ appendEachLineAndSave(){
     fi
 
     #방금 읽은 줄을 priorAppendStr에 누적해서 추가!
-    priorAppendStr+="$line\n"
+    appendApdStr "$line\n"
 
-    echo "$priorAppendStr"
+    # echo "$priorAppendStr"
 
 }
 
@@ -633,12 +680,14 @@ logResultOption(){
 finishLastLine(){
 
 
+    local apdStr="$(getApdStr)"
     log "[getRules] reading done. fill left over"
-    savePriorLinesToCurStageArr $curStageArrIdx "$str"
+    savePriorLinesToCurStageArr $curStageArrIdx "$apdStr"
 
     # 마지막 오브 마지막 limit은 다른 arr을 만나지 않는다. 마지막 줄 str을 저장해준다.
     fill_left_over $currentStage $lenAllArr
 }
+
 
 getRules(){
     # 읽은 뒤 쪼갤 때 newline단위로 줄을 구분해야 한다.
@@ -651,33 +700,32 @@ getRules(){
     assignEachcurStagecurStageArrIdx
     initializeReading
 
-    local priorAppendStr
+    # local priorAppendStr
     while read -r line || [ -n "$line" ]; do
     # while read -r line;
     # do  
         
-        if isMeetNewLine "$line";
-        then
-            if [ $newline_count -eq 0 ] # 연속된 개행을 받지 않는다.
-            then
-                priorAppendStr+="\n"
-            fi
-            newline_count=$(( newline_count + 1))
-            # log "[getRules] : newline_count : meet new line: $newline_count"
+        # if isMeetNewLine "$line";
+        # then
+        #     if [ $newline_count -eq 0 ] # 연속된 개행을 받지 않는다.
+        #     then
+        #         priorAppendStr+="\n"
+        #     fi
+        #     newline_count=$(( newline_count + 1))
+        #     # log "[getRules] : newline_count : meet new line: $newline_count"
 
-            continue
-        else
-            if [ $newline_count -eq 1 ]
-            then
-                newline_count=0
-            elif [ $newline_count -gt 1 ]
-            then
-                priorAppendStr="$(detectPrghAndSavePriorStr "$priorAppendStr" "$line")"
-            fi
-        fi
+        #     continue
+        # else
+        #     if [ $newline_count -eq 1 ]
+        #     then
+        #         newline_count=0
+        #     elif [ $newline_count -gt 1 ]
+        #     then
+        #         priorAppendStr="$(detectPrghAndSavePriorStr "$priorAppendStr" "$line")"
+        #     fi
+        # fi
         
-        priorAppendStr="$(appendEachLineAndSave "$priorAppendStr" "$line")"
-        echo "-----------------$priorAppendStr"
+        appendEachLineAndSave "$line"
 
         
     done < $file
@@ -686,12 +734,9 @@ getRules(){
     # c 기준으로 텍스트는 개행문자로 끝이 나야 한다. 그게 아니면 에러를 발생시키고 마지막 while을 실행하지 않는다.
     # https://stackoverflow.com/questions/12916352/shell-script-read-missing-last-line
     # 그래서... 
-    # finishLastLine
-    log "[getRules] reading done. fill left over"
-    savePriorLinesToCurStageArr $curStageArrIdx "$priorAppendStr"
+    finishLastLine
 
-    # 마지막 오브 마지막 limit은 다른 arr을 만나지 않는다. 마지막 줄 str을 저장해준다.
-    fill_left_over $currentStage $lenAllArr
+    
 
     
     logResultOption
