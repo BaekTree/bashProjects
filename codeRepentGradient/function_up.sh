@@ -237,7 +237,7 @@ splitSeg(){
     local cur_idx=$1
     local totalStr=$2
     local line_new=$3
-    savePriorLinesToCurStageArr $cur_idx $totalStr
+    savePriorLinesToCurStageArr $totalStr
     totalStr=""
     fill_left_over $(( cur_idx+1 )) ${#allArr[@]}
     local last_rule=${ruleArr[-1]}
@@ -322,9 +322,9 @@ savePriorLinesToCurStageArr(){
     # 그 arr에 현재까지 내용을 넣는다.
     # priorIFS=$IFS
     # IFS=$origin_IFS
-    local curStageArrIdx=$1
-    local str="$2"
-    local curArr=${allArr[$curStageArrIdx]}
+    local getCurReadArrIdx="$(getCurReadArrIdx)"
+    local str="$1"
+    local curArr=${allArr[$getCurReadArrIdx]}
     log "\n[savePriorLinesToCurStageArr]-----------------------------------------|"
     log "                                                                      |"
     log "[savePriorLinesToCurStageArr] : current array index: $curArr"
@@ -412,12 +412,17 @@ setCurReadStage(){
     CUR_READ_STAGE="$st"
 }
 
+updateNextCurReadStage(){
+    CUR_READ_STAGE=$(( CUR_READ_STAGE + 1 ))
+}
+
 getCurReadArrIdx(){
     echo "$CUR_READ_ARR_IDX"
 }
 
 setCurReadArrIdx(){
-    local idx="$s1"
+    local idx="$1"
+    echo "-----set-----$idx"
     CUR_READ_ARR_IDX=$idx
 }
 
@@ -444,7 +449,7 @@ isMeetNewLine(){
 
 isTransitionNextArr(){
     local line="$1"
-    log "[isTransitionNextArr] : input : |$line|"
+    # log "[isTransitionNextArr] : input : |$line|"
     if [[ $line == *"rule : "* ]] || [[ $line == *"cont : "* ]] || [[ $line == *"ans : "* ]] || [[ $line == *"limit : "* ]]
     then
         return 0
@@ -471,7 +476,7 @@ detectPrghAndSavePriorStr(){
     log "[getRules] : face a paragraph : detected continuous newlines : $newline_count"
     newline_count=0
     # log "[getRules] : newline_count : init : $newline_count"
-    savePriorLinesToCurStageArr $curStageArrIdx "$priorAppendStr"
+    savePriorLinesToCurStageArr "$priorAppendStr"
     priorAppendStr=""
 
     if ! isTransitionNextArr "$line";
@@ -534,53 +539,90 @@ appendApdStr(){
 }
 
 startCollectNewApdStrUntilTransNewArr(){
-    # local currentStage="$1"
-    # local line="$2"
-    # local curStageArrIdx="$3"
 
+
+    if [[ line_ref == $1 ]]
+    then
+        echo "-----------------------------------------ERROR-----------------------------------------"
+        echo "startCollectNewApdStrUntilTransNewArr name ref circular error. "
+        echo "local name ref has the same name of input"
+        echo "---------------------------------------------------------------------------------------"
+
+        exit 1
+    fi
+    local -n line_ref="$1"
+
+
+    local curReadStage="$(getCurReadStage)"
+    local curReadArrIdx="$(getCurReadArrIdx)"
+
+                # rule, cont, ans, limit 순서인데 건너 뛰었을 때, 중간의 arr들을 빈값으로 넣는다.
+        # currentStage을 통해서 현재 순서를 파악한다.
+        # curStageArrIdx는 새로운 종류의 arr을 만났을 때 해당 arr의 값을 부여.
+        # currentStage과 curStageArrIdx을 비교한다. 새로운 arr을 만날 때마다 currentStage과 curStageArrIdx을 변화시킨다.
+        # 새로운 arr을 만나면 currentStage은 1씩 증가하고, curStageArrIdx는 해당 arr의 index을 부여.
+        # 만약 건너뛴게 없다면 currentStage과 curStageArrIdx가 동일하게 1씩 증가. 만약 건너뛰었다면 그만큼 차이가 발생!
+        # 그 인덱스들 사이의 arr에 빈값을 부여!
+        # echo "----------currentStage : $currentStage and curStageArrIdx : $curStageArrIdx-----------"
+
+        if [ $curReadStage -lt $curReadArrIdx ]
+        then
+            log "[startCollectNewApdStrUntilTransNewArr] runeNum=$ruleNum"
+            log "[startCollectNewApdStrUntilTransNewArr] skip : from $curReadStage to $curReadArrIdx"
+
+            fill_left_over $curReadStage $curReadArrIdx
+            # 빈 arr들을 채웠으니 다시 currentStage을 curStageArrIdx와 동일하게 맞춰준다!
+            setCurReadStage $curReadArrIdx
+        fi
+        
 
     # 새로운 arr을 쓰기 위해 priorAppendStr을 모으기 "시작". 다른 arr가 나올 때 모아둔 priorAppendStr을 저장한다.
-        if [[ $line == *"rule : "* ]]
+        if [[ $line_ref == *"rule : "* ]]
         then
-            # savePriorLinesToCurStageArr $curStageArrIdx "$priorAppendStr"
-            # fi
-            # echo
-            if isValidLine "$apdStr";
-            then
-                # 직전에 쓰고 있던 값에서 rule으로 바뀌었으니 더해준다. 더 이상 기존의 currentStage가 아니다!
-                # currentStage=$(( currentStage + 1 ))
-                fill_left_over $currentStage $lenAllArr
-            fi
 
-            curStageArrIdx=$rule_idx
-            line="${line#"rule : "}"
-            rules+="RULE ${ruleNum} : $line\n\n"
+            # if isValidLine_ref "$apdStr";
+            # then
+            #     # 직전에 쓰고 있던 값에서 rule으로 바뀌었으니 더해준다. 더 이상 기존의 currentStage가 아니다!
+            #     # currentStage=$(( currentStage + 1 ))
+            #     fill_left_over $curReadStage $lenAllArr
+            # fi
+
+            setCurReadArrIdx $rule_idx
+            line_ref="${line_ref#"rule : "}"
+            rules+="RULE ${ruleNum} : $line_ref\n\n"
 
             #지금 rule이 막 시작했으므로 초기화
-            line="RULE ${ruleNum} : $line"
+            line_ref="RULE ${ruleNum} : $line_ref"
             ruleNum=$(( ruleNum + 1 ))
 
             # 새로운 rule을 만났을 때 넣을 값이 없던 arr들 채운다 : 남아있는 cont ans limit을 빈 값으로 넣는다.
             # limit 값이 있었으면 currentStage = 4, allArr.length = 4가 되어서 그냥 pass.
 
             # rule부터 다시 새로 시작!
-            currentStage=0
-        elif [[ $line == *"cont : "* ]]
+            setCurReadStage 0
+        elif [[ $line_ref == *"cont : "* ]]
         then
-            # 새로운 종류의 arr을 시작하니까 curStageArrIdx을 이 arr의 고유 index으로 다시 설정해준다.
-            curStageArrIdx=$cont_idx
-            line=("${line#"cont : "}")
-        elif [[ $line == *"ans : "* ]] # user input single line as answer.
+            # 새로운 종류의 arr을 시작하니까 setCurReadArrIdx  이 arr의 고유 index으로 다시 설정해준다.
+            setCurReadArrIdx $cont_idx
+            line_ref=("${line_ref#"cont : "}")
+        elif [[ $line_ref == *"ans : "* ]] # user input single line_ref as answer.
         then
-            curStageArrIdx=$ans_idx
-            line=("${line#"ans : "}")
-        elif [[ $line == *"limit : "* ]]
+            setCurReadArrIdx $ans_idx
+            line_ref=("${line_ref#"ans : "}")
+        elif [[ $line_ref == *"limit : "* ]]
         then
-            curStageArrIdx=$lmt_idx
-            line=("${line#"limit : "}")
+            setCurReadArrIdx $lmt_idx
+            line_ref=("${line_ref#"limit : "}")
         fi
 
         clearApdStr
+
+        # eval line="$line"
+
+
+
+
+
 }
 
 
@@ -609,37 +651,32 @@ appendEachLineAndSave(){
     then
         # 기존에 읽던 arr의 index : curStageArrIdx.
         # 그 arr에 현재까지 내용을 넣는다.
-        currentStage=$(( currentStage + 1 ))
+
+        updateNextCurReadStage
+
+        curReadStage="$(getCurReadStage)"
+        curReadArrIdx="$(getCurReadArrIdx)"
+        echo "before collect and save : curReadStage : $curReadStage. curReadArrIdx : $curReadArrIdx"
 
         local apdStr="$(getApdStr)"
         if isValidLine "$apdStr";#invalid when first line of txt. apdStr contains nothing, so empty string is put to ruleArr.
         then
-            savePriorLinesToCurStageArr $curStageArrIdx "$apdStr"
+            savePriorLinesToCurStageArr "$apdStr"
         fi
 
-        startCollectNewApdStrUntilTransNewArr
+
+        startCollectNewApdStrUntilTransNewArr "line"
+        echo "update line : $line"
+
+
+        curReadStage="$(getCurReadStage)"
+        curReadArrIdx="$(getCurReadArrIdx)"
+        echo "after collect and save : curReadStage : $curReadStage. curReadArrIdx : $curReadArrIdx"
 
 
         # 새로 arr에 넣을 priorAppendStr을 초기화. 여기에 계속 누적
         # priorAppendStr=""
 
-        # rule, cont, ans, limit 순서인데 건너 뛰었을 때, 중간의 arr들을 빈값으로 넣는다.
-        # currentStage을 통해서 현재 순서를 파악한다.
-        # curStageArrIdx는 새로운 종류의 arr을 만났을 때 해당 arr의 값을 부여.
-        # currentStage과 curStageArrIdx을 비교한다. 새로운 arr을 만날 때마다 currentStage과 curStageArrIdx을 변화시킨다.
-        # 새로운 arr을 만나면 currentStage은 1씩 증가하고, curStageArrIdx는 해당 arr의 index을 부여.
-        # 만약 건너뛴게 없다면 currentStage과 curStageArrIdx가 동일하게 1씩 증가. 만약 건너뛰었다면 그만큼 차이가 발생!
-        # 그 인덱스들 사이의 arr에 빈값을 부여!
-        # echo "----------currentStage : $currentStage and curStageArrIdx : $curStageArrIdx-----------"
-        if [ $currentStage -lt $curStageArrIdx ]
-        then
-            log "[appendEachLineAndSave] runeNum=$ruleNum"
-            log "[appendEachLineAndSave] skip : from $currentStage to $curStageArrIdx"
-
-            fill_left_over $currentStage $curStageArrIdx
-            # 빈 arr들을 채웠으니 다시 currentStage을 curStageArrIdx와 동일하게 맞춰준다!
-            currentStage=$curStageArrIdx
-        fi
 
 
         # if [ $currentStage -gt 3 ]
@@ -682,9 +719,11 @@ finishLastLine(){
 
     local apdStr="$(getApdStr)"
     log "[getRules] reading done. fill left over"
-    savePriorLinesToCurStageArr $curStageArrIdx "$apdStr"
+    savePriorLinesToCurStageArr "$apdStr"
 
     # 마지막 오브 마지막 limit은 다른 arr을 만나지 않는다. 마지막 줄 str을 저장해준다.
+    
+    local currentStage="$(getCurReadStage)"
     fill_left_over $currentStage $lenAllArr
 }
 
@@ -697,7 +736,6 @@ getRules(){
 
 
 
-    assignEachcurStagecurStageArrIdx
     initializeReading
 
     # local priorAppendStr
