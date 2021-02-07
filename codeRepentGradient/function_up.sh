@@ -1,10 +1,10 @@
 # origin_IFS=$IFS
-declare -a ruleArr=(r)
-declare -a contArr=(c)
-declare -a ansArr=(a)
-declare -a limitArr=(l)
-declare -a completeArr=(c)
-declare -a msgArr=(m)
+declare -a ruleArr=()
+declare -a contArr=()
+declare -a ansArr=()
+declare -a limitArr=()
+declare -a completeArr=()
+declare -a msgArr=()
 
 log(){
     if [[ $log == "-l" ]]
@@ -211,11 +211,11 @@ printArrs(){
 
 FILL
 
-fill_left_over(){
+fillMissingArrayFromTo(){
     # 새로운 rule을 만났을 때 넣을 값이 없던 arr들 채운다 : 남아있는 cont ans limit을 빈 값으로 넣는다.
     local left_over_idx=$1
     local idx_until_this_idx=$2
-    log "[fill_left_over] fill array index : from $left_over_idx to $idx_until_this_idx"
+    log "[fillMissingArrayFromTo] fill array index : from $left_over_idx to $idx_until_this_idx"
     for (( ; left_over_idx<$idx_until_this_idx; left_over_idx++ ))
     do
         local t=${allArr[$left_over_idx]}
@@ -226,10 +226,10 @@ fill_left_over(){
         then
             empty=0
         fi
-        log "[fill_left_over] array to be filled : $t, line=\" \""
+        log "[fillMissingArrayFromTo] array to be filled : $t, line=\" \""
         tmpArr+=($empty)
         # tmpArr+=("emptyNew")
-        log "[fill_left_over] array append : |${tmpArr[*]}|"
+        log "[fillMissingArrayFromTo] array append : |${tmpArr[*]}|"
     done
 }
 
@@ -239,7 +239,7 @@ splitSeg(){
     local line_new=$3
     savePriorLinesToCurStageArr $totalStr
     totalStr=""
-    fill_left_over $(( cur_idx+1 )) ${#allArr[@]}
+    fillMissingArrayFromTo $(( cur_idx+1 )) ${#allArr[@]}
     local last_rule=${ruleArr[-1]}
 }
 
@@ -305,7 +305,10 @@ splitLargeStrAndStore(){
 
         # refArr+=("$cleanStr")
 
-        fill_left_over $(( curStageArrIdx+1 )) ${#allArr[@]}
+        
+        local curReadStage="$(getCurReadStage)"
+
+        fillMissingArrayFromTo $(( curReadStage+1 )) ${#allArr[@]}
         last_rule=${ruleArr[-1]}
         ruleArr+=($last_rule)
 
@@ -347,6 +350,8 @@ savePriorLinesToCurStageArr(){
     then
         # echo $(( ${#str} / $splitBaseNum ))
         splitLargeStrAndStore "$str" "$curArr"
+    else
+        cleanseStrAndStore "$str" "$curArr"
     fi
 
     # str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
@@ -355,7 +360,6 @@ savePriorLinesToCurStageArr(){
     # refArr+=("$str")
 
 
-    cleanseStrAndStore "$str" "$curArr"
     # IFS=$priorIFS
 
     log "                                                                      |"
@@ -422,7 +426,6 @@ getCurReadArrIdx(){
 
 setCurReadArrIdx(){
     local idx="$1"
-    echo "-----set-----$idx"
     CUR_READ_ARR_IDX=$idx
 }
 
@@ -432,11 +435,11 @@ initializeReading(){
     
     ruleNum=1
     str=""  
-    newline_count=0
+    newLineCount=0
 }
 
 
-isMeetNewLine(){
+isMeetNewline(){
     local line=$1
 
     if [[ $line == "" ]]
@@ -460,7 +463,7 @@ isTransitionNextArr(){
 
 copyRuleForNextPrgp(){
 
-        fill_left_over $(( curStageArrIdx+1 )) ${#allArr[@]}
+        fillMissingArrayFromTo $(( curStageArrIdx+1 )) ${#allArr[@]}
         last_rule=${ruleArr[-1]}
         
         ## 만약 여러 개행으로 하나의 rule+cont+ans+limit이 끝난다면? 그대로 이어서는 안된다. 새로 추가하도록 내버려 둬야 한다.
@@ -473,9 +476,9 @@ copyRuleForNextPrgp(){
 detectPrghAndSavePriorStr(){
     local priorAppendStr="$1"
     local line="$2"
-    log "[getRules] : face a paragraph : detected continuous newlines : $newline_count"
-    newline_count=0
-    # log "[getRules] : newline_count : init : $newline_count"
+    log "[getRules] : face a paragraph : detected continuous newlines : $newLineCount"
+    newLineCount=0
+    # log "[getRules] : newLineCount : init : $newLineCount"
     savePriorLinesToCurStageArr "$priorAppendStr"
     priorAppendStr=""
 
@@ -489,21 +492,21 @@ detectPrghAndSavePriorStr(){
 }
 
 # isFaceParagraphThenSplitAndStore(){
-#     if isMeetNewLine "$line";
+#     if isMeetNewline "$line";
 #     then
-#         if [ $newline_count -eq 0 ] # 연속된 개행을 받지 않는다.
+#         if [ $newLineCount -eq 0 ] # 연속된 개행을 받지 않는다.
 #         then
 #             str+="\n"
 #         fi
-#         newline_count=$(( newline_count + 1))
-#         # log "[getRules] : newline_count : meet new line: $newline_count"
+#         newLineCount=$(( newLineCount + 1))
+#         # log "[getRules] : newLineCount : meet new line: $newLineCount"
 
 #         continue
 #     else
-#         if [ $newline_count -eq 1 ]
+#         if [ $newLineCount -eq 1 ]
 #         then
-#             newline_count=0
-#         elif [ $newline_count -gt 1 ]
+#             newLineCount=0
+#         elif [ $newLineCount -gt 1 ]
 #         then
 #             detectPrghAndSavePriorStr
 #         fi
@@ -538,13 +541,37 @@ appendApdStr(){
     APD_STR+="$s"
 }
 
-startCollectNewApdStrUntilTransNewArr(){
+checkMissingStageAndFillArr(){
+        # rule, cont, ans, limit 순서인데 건너 뛰었을 때, 중간의 arr들을 빈값으로 넣는다.
+    # currentStage을 통해서 현재 순서를 파악한다.
+    # curStageArrIdx는 새로운 종류의 arr을 만났을 때 해당 arr의 값을 부여.
+    # currentStage과 curStageArrIdx을 비교한다. 새로운 arr을 만날 때마다 currentStage과 curStageArrIdx을 변화시킨다.
+    # 새로운 arr을 만나면 currentStage은 1씩 증가하고, curStageArrIdx는 해당 arr의 index을 부여.
+    # 만약 건너뛴게 없다면 currentStage과 curStageArrIdx가 동일하게 1씩 증가. 만약 건너뛰었다면 그만큼 차이가 발생!
+    # 그 인덱스들 사이의 arr에 빈값을 부여!
+    # echo "----------currentStage : $currentStage and curStageArrIdx : $curStageArrIdx-----------"
+
+    local curReadStage="$(getCurReadStage)"
+    local curReadArrIdx="$(getCurReadArrIdx)"
+
+    if [ $curReadStage -lt $curReadArrIdx ]
+    then
+        log "[collectNewApdStrUntilTransNewArr] runeNum=$ruleNum"
+        log "[collectNewApdStrUntilTransNewArr] skip : from $curReadStage to $curReadArrIdx"
+
+        fillMissingArrayFromTo $curReadStage $curReadArrIdx
+        # 빈 arr들을 채웠으니 다시 currentStage을 curStageArrIdx와 동일하게 맞춰준다!
+        setCurReadStage $curReadArrIdx
+    fi
+}
+
+collectNewApdStrUntilTransNewArr(){
 
 
     if [[ line_ref == $1 ]]
     then
         echo "-----------------------------------------ERROR-----------------------------------------"
-        echo "startCollectNewApdStrUntilTransNewArr name ref circular error. "
+        echo "collectNewApdStrUntilTransNewArr name ref circular error. "
         echo "local name ref has the same name of input"
         echo "---------------------------------------------------------------------------------------"
 
@@ -552,42 +579,17 @@ startCollectNewApdStrUntilTransNewArr(){
     fi
     local -n line_ref="$1"
 
-
-    local curReadStage="$(getCurReadStage)"
-    local curReadArrIdx="$(getCurReadArrIdx)"
-
-                # rule, cont, ans, limit 순서인데 건너 뛰었을 때, 중간의 arr들을 빈값으로 넣는다.
-        # currentStage을 통해서 현재 순서를 파악한다.
-        # curStageArrIdx는 새로운 종류의 arr을 만났을 때 해당 arr의 값을 부여.
-        # currentStage과 curStageArrIdx을 비교한다. 새로운 arr을 만날 때마다 currentStage과 curStageArrIdx을 변화시킨다.
-        # 새로운 arr을 만나면 currentStage은 1씩 증가하고, curStageArrIdx는 해당 arr의 index을 부여.
-        # 만약 건너뛴게 없다면 currentStage과 curStageArrIdx가 동일하게 1씩 증가. 만약 건너뛰었다면 그만큼 차이가 발생!
-        # 그 인덱스들 사이의 arr에 빈값을 부여!
-        # echo "----------currentStage : $currentStage and curStageArrIdx : $curStageArrIdx-----------"
-
-        if [ $curReadStage -lt $curReadArrIdx ]
-        then
-            log "[startCollectNewApdStrUntilTransNewArr] runeNum=$ruleNum"
-            log "[startCollectNewApdStrUntilTransNewArr] skip : from $curReadStage to $curReadArrIdx"
-
-            fill_left_over $curReadStage $curReadArrIdx
-            # 빈 arr들을 채웠으니 다시 currentStage을 curStageArrIdx와 동일하게 맞춰준다!
-            setCurReadStage $curReadArrIdx
-        fi
-        
-
     # 새로운 arr을 쓰기 위해 priorAppendStr을 모으기 "시작". 다른 arr가 나올 때 모아둔 priorAppendStr을 저장한다.
         if [[ $line_ref == *"rule : "* ]]
         then
-
-            # if isValidLine_ref "$apdStr";
-            # then
-            #     # 직전에 쓰고 있던 값에서 rule으로 바뀌었으니 더해준다. 더 이상 기존의 currentStage가 아니다!
-            #     # currentStage=$(( currentStage + 1 ))
-            #     fill_left_over $curReadStage $lenAllArr
-            # fi
+            # startNewRuleArrStage
+            local curReadStage="$(getCurReadStage)"
+            local curReadArrIdx="$(getCurReadArrIdx)"
+            fillMissingArrayFromTo $curReadStage $lenAllArr
 
             setCurReadArrIdx $rule_idx
+            setCurReadStage 0
+
             line_ref="${line_ref#"rule : "}"
             rules+="RULE ${ruleNum} : $line_ref\n\n"
 
@@ -595,29 +597,29 @@ startCollectNewApdStrUntilTransNewArr(){
             line_ref="RULE ${ruleNum} : $line_ref"
             ruleNum=$(( ruleNum + 1 ))
 
-            # 새로운 rule을 만났을 때 넣을 값이 없던 arr들 채운다 : 남아있는 cont ans limit을 빈 값으로 넣는다.
-            # limit 값이 있었으면 currentStage = 4, allArr.length = 4가 되어서 그냥 pass.
-
             # rule부터 다시 새로 시작!
-            setCurReadStage 0
-        elif [[ $line_ref == *"cont : "* ]]
-        then
-            # 새로운 종류의 arr을 시작하니까 setCurReadArrIdx  이 arr의 고유 index으로 다시 설정해준다.
-            setCurReadArrIdx $cont_idx
-            line_ref=("${line_ref#"cont : "}")
-        elif [[ $line_ref == *"ans : "* ]] # user input single line_ref as answer.
-        then
-            setCurReadArrIdx $ans_idx
-            line_ref=("${line_ref#"ans : "}")
-        elif [[ $line_ref == *"limit : "* ]]
-        then
-            setCurReadArrIdx $lmt_idx
-            line_ref=("${line_ref#"limit : "}")
+        else
+            if [[ $line_ref == *"cont : "* ]]
+            then
+                    # 새로운 종류의 arr을 시작하니까 setCurReadArrIdx  이 arr의 고유 index으로 다시 설정해준다.
+                    setCurReadArrIdx $cont_idx
+                    line_ref=("${line_ref#"cont : "}")
+            elif [[ $line_ref == *"ans : "* ]] # user input single line_ref as answer.
+            then
+                    setCurReadArrIdx $ans_idx
+                    line_ref=("${line_ref#"ans : "}")
+            elif [[ $line_ref == *"limit : "* ]]
+            then
+                    setCurReadArrIdx $lmt_idx
+                    line_ref=("${line_ref#"limit : "}")
+            fi
+
+            checkMissingStageAndFillArr
         fi
+
 
         clearApdStr
 
-        # eval line="$line"
 
 
 
@@ -654,9 +656,9 @@ appendEachLineAndSave(){
 
         updateNextCurReadStage
 
-        curReadStage="$(getCurReadStage)"
-        curReadArrIdx="$(getCurReadArrIdx)"
-        echo "before collect and save : curReadStage : $curReadStage. curReadArrIdx : $curReadArrIdx"
+        # curReadStage="$(getCurReadStage)"
+        # curReadArrIdx="$(getCurReadArrIdx)"
+        # echo "before collect and save : curReadStage : $curReadStage. curReadArrIdx : $curReadArrIdx"
 
         local apdStr="$(getApdStr)"
         if isValidLine "$apdStr";#invalid when first line of txt. apdStr contains nothing, so empty string is put to ruleArr.
@@ -665,24 +667,17 @@ appendEachLineAndSave(){
         fi
 
 
-        startCollectNewApdStrUntilTransNewArr "line"
-        echo "update line : $line"
+        collectNewApdStrUntilTransNewArr "line"
 
 
-        curReadStage="$(getCurReadStage)"
-        curReadArrIdx="$(getCurReadArrIdx)"
-        echo "after collect and save : curReadStage : $curReadStage. curReadArrIdx : $curReadArrIdx"
+        # curReadStage="$(getCurReadStage)"
+        # curReadArrIdx="$(getCurReadArrIdx)"
+        # echo "after collect and save : curReadStage : $curReadStage. curReadArrIdx : $curReadArrIdx"
 
 
         # 새로 arr에 넣을 priorAppendStr을 초기화. 여기에 계속 누적
         # priorAppendStr=""
 
-
-
-        # if [ $currentStage -gt 3 ]
-        # then
-        #     currentStage=0
-        # fi
     fi
 
     #방금 읽은 줄을 priorAppendStr에 누적해서 추가!
@@ -723,8 +718,10 @@ finishLastLine(){
 
     # 마지막 오브 마지막 limit은 다른 arr을 만나지 않는다. 마지막 줄 str을 저장해준다.
     
+    # 새로운 arr을 만나야 업데이트를 해준다. 그런데 만나지 못하고 읽기가 끝나서 업데이트를 수동으로 해줘야 한다.
+    updateNextCurReadStage
     local currentStage="$(getCurReadStage)"
-    fill_left_over $currentStage $lenAllArr
+    fillMissingArrayFromTo $currentStage $lenAllArr
 }
 
 
@@ -743,21 +740,21 @@ getRules(){
     # while read -r line;
     # do  
         
-        # if isMeetNewLine "$line";
+        # if isMeetNewline "$line";
         # then
-        #     if [ $newline_count -eq 0 ] # 연속된 개행을 받지 않는다.
+        #     if [ $newLineCount -eq 0 ] # 연속된 개행을 받지 않는다.
         #     then
         #         priorAppendStr+="\n"
         #     fi
-        #     newline_count=$(( newline_count + 1))
-        #     # log "[getRules] : newline_count : meet new line: $newline_count"
+        #     newLineCount=$(( newLineCount + 1))
+        #     # log "[getRules] : newLineCount : meet new line: $newLineCount"
 
         #     continue
         # else
-        #     if [ $newline_count -eq 1 ]
+        #     if [ $newLineCount -eq 1 ]
         #     then
-        #         newline_count=0
-        #     elif [ $newline_count -gt 1 ]
+        #         newLineCount=0
+        #     elif [ $newLineCount -gt 1 ]
         #     then
         #         priorAppendStr="$(detectPrghAndSavePriorStr "$priorAppendStr" "$line")"
         #     fi
