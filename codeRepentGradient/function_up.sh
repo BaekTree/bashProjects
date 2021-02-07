@@ -6,6 +6,12 @@ declare -a limitArr=()
 declare -a completeArr=()
 declare -a msgArr=()
 
+allArr=( ruleArr contArr ansArr limitArr completeArr)
+lenAllArr=${#allArr[@]}
+
+SPLIT_BASE_LEN=500
+
+
 log(){
     if [[ $log == "-l" ]]
     then
@@ -22,7 +28,6 @@ updateVerses(){
     v=$(ls)
     vArr=($v)
 
-    # log $[updateVerses] : {vArr[17]}
     numV=${#vArr[@]}
 
     log "[updateVerses] : back to cur dir : $curDir"
@@ -226,28 +231,17 @@ fillMissingArrayFromTo(){
         then
             empty=0
         fi
-        log "[fillMissingArrayFromTo] array to be filled : $t, line=\" \""
+        log "[fillMissingArrayFromTo] cur rule : $ruleNum, array to be filled : $t, line=\" \""
         tmpArr+=($empty)
         # tmpArr+=("emptyNew")
         log "[fillMissingArrayFromTo] array append : |${tmpArr[*]}|"
     done
 }
 
-splitSeg(){
-    local cur_idx=$1
-    local totalStr=$2
-    local line_new=$3
-    savePriorLinesToCurStageArr $totalStr
-    totalStr=""
-    fillMissingArrayFromTo $(( cur_idx+1 )) ${#allArr[@]}
-    local last_rule=${ruleArr[-1]}
-}
-
 isLargeStr(){
     local str=$1
-    splitBaseNum=500
 
-    if [ ${#str} -gt $splitBaseNum ]
+    if [ ${#str} -gt $SPLIT_BASE_LEN ]
     then
         return 0
     else
@@ -279,48 +273,44 @@ cleanseStrAndStore(){
 splitLargeStrAndStore(){
     local str="$1"
     local curArr="$2"
-    while [ $(( ${#str} / $splitBaseNum )) -gt  0 ]
+    while [ $(( ${#str} / $SPLIT_BASE_LEN )) -gt  0 ]
     do
-        # echo $(( ${#str} / $splitBaseNum ))
+        # echo $(( ${#str} / $SPLIT_BASE_LEN ))
         log "[target] : |$str|"
-        frontSeg="${str:0:$splitBaseNum}"
+        frontSeg="${str:0:$SPLIT_BASE_LEN}"
         log "[frontSeg] : |$frontSeg|"
         endSeg="${str#"$frontSeg"}"
         # endSeg="${str#$frontSeg}" # 제대로 잘라내지 못한다. 중간에 껴있는 space나 개행 때문에 통으로 인식하지 못한다. 숫자는 {}을 붙이고 문자는 ""을 붙여라!
         log "[endSeg] : |$endSeg|"
         # exit 0
         ### 
-        # endSeg=${str:$splitBaseNum} # $splitBaseNum자부터 끝까지. 뒷부분이 된다.
+        # endSeg=${str:$SPLIT_BASE_LEN} # $SPLIT_BASE_LEN자부터 끝까지. 뒷부분이 된다.
 
 
 
         # frontSeg=${str%$endSeg}
-        log "[savePriorLinesToCurStageArr] : cut $splitBaseNum chars : |$frontSeg|"
+        log "[splitLargeStrAndStore] : cut $SPLIT_BASE_LEN chars : |$frontSeg|"
 
         cleanseStrAndStore "$frontSeg" "$curArr"
 
         # cleanStr=$(echo -e "$frontSeg" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
         # # str=${str%% *}
-        # log "[savePriorLinesToCurStageArr] :cleanStr: |$cleanStr|"
-
-        # refArr+=("$cleanStr")
+        # log "[splitLargeStrAndStore] :cleanStr: |$cleanStr|"
 
         
         local curReadStage="$(getCurReadStage)"
 
-        fillMissingArrayFromTo $(( curReadStage+1 )) ${#allArr[@]}
+        fillMissingArrayFromTo $(( curReadStage+1 )) $lenAllArr
         last_rule=${ruleArr[-1]}
         ruleArr+=($last_rule)
 
         str="$endSeg"
-        # echo "[str] $str"
-        # exit 0
     done
     cleanseStrAndStore "$str" "$curArr"
 
 }
 
-savePriorLinesToCurStageArr(){
+saveApdStrToCurStageArr(){
     # 기존에 읽던 arr의 index : curStageArrIdx.
     # 그 arr에 현재까지 내용을 넣는다.
     # priorIFS=$IFS
@@ -328,10 +318,10 @@ savePriorLinesToCurStageArr(){
     local getCurReadArrIdx="$(getCurReadArrIdx)"
     local str="$1"
     local curArr=${allArr[$getCurReadArrIdx]}
-    log "\n[savePriorLinesToCurStageArr]-----------------------------------------|"
+    log "\n[saveApdStrToCurStageArr]-------------------------------------------|"
     log "                                                                      |"
-    log "[savePriorLinesToCurStageArr] : current array index: $curArr"
-    # log "[savePriorLinesToCurStageArr] : $str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
+    log "[saveApdStrToCurStageArr] : current array index: $curArr"
+    # log "[saveApdStrToCurStageArr] : $str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
     # 앞뒤에 붙어있는 개행과 빈칸을 지운다. 
     # str="$(echo -e "$str" | sed '/^$/d')"
     # str=${str%%\\n*}# 작동 안함
@@ -339,16 +329,16 @@ savePriorLinesToCurStageArr(){
     # str="$(echo -e "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba')"
     # str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
     # # str=${str%% *}
-    log "[savePriorLinesToCurStageArr] : str : |$str|"
+    log "[saveApdStrToCurStageArr] : str : |$str|"
     # 기존 arr의 누적해왔던 값을 기존 arr에 쓴다.
-    # splitBaseNum=500
+    # SPLIT_BASE_LEN=500
 
     # echo "$str"
     # echo "${#str}"
 
     if isLargeStr "$str";
     then
-        # echo $(( ${#str} / $splitBaseNum ))
+        # echo $(( ${#str} / $SPLIT_BASE_LEN ))
         splitLargeStrAndStore "$str" "$curArr"
     else
         cleanseStrAndStore "$str" "$curArr"
@@ -356,7 +346,7 @@ savePriorLinesToCurStageArr(){
 
     # str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
     # # str=${str%% *}
-    # log "[savePriorLinesToCurStageArr] : |$str|"
+    # log "[saveApdStrToCurStageArr] : |$str|"
     # refArr+=("$str")
 
 
@@ -365,7 +355,7 @@ savePriorLinesToCurStageArr(){
     log "                                                                      |"
     log "----------------------------------------------------------------------|\n"
 
-
+    clearApdStr
 }
 
 
@@ -377,8 +367,7 @@ READ
 
 
 
-allArr=( ruleArr contArr ansArr limitArr completeArr)
-lenAllArr=${#allArr[@]}
+
 
 
 assignEachcurStagecurStageArrIdx(){
@@ -402,8 +391,6 @@ assignEachcurStagecurStageArrIdx(){
     done
 }
 
-# currentStage
-# curStagecurStageArrIdx=0
 CUR_READ_STAGE=${#allArr[@]}
 CUR_READ_ARR_IDX=0
 
@@ -414,10 +401,13 @@ getCurReadStage(){
 setCurReadStage(){
     local st="$1"
     CUR_READ_STAGE="$st"
+    log "[setCurReadStage] : update CUR_READ_STAGE : $CUR_READ_STAGE"
 }
 
 updateNextCurReadStage(){
     CUR_READ_STAGE=$(( CUR_READ_STAGE + 1 ))
+    log "[setCurReadStage] : update CUR_READ_STAGE : $CUR_READ_STAGE"
+
 }
 
 getCurReadArrIdx(){
@@ -431,28 +421,16 @@ setCurReadArrIdx(){
 
 initializeReading(){
     assignEachcurStagecurStageArrIdx
-    #limit ruleArr idx
     
     ruleNum=1
-    str=""  
     newLineCount=0
 }
 
 
-isMeetNewline(){
-    local line=$1
-
-    if [[ $line == "" ]]
-    then
-        return 0
-    else
-        return 1
-    fi
-}
 
 isTransitionNextArr(){
     local line="$1"
-    # log "[isTransitionNextArr] : input : |$line|"
+    log "[isTransitionNextArr] : input : |$line|"
     if [[ $line == *"rule : "* ]] || [[ $line == *"cont : "* ]] || [[ $line == *"ans : "* ]] || [[ $line == *"limit : "* ]]
     then
         return 0
@@ -461,66 +439,13 @@ isTransitionNextArr(){
     fi
 }
 
-copyRuleForNextPrgp(){
-
-        fillMissingArrayFromTo $(( curStageArrIdx+1 )) ${#allArr[@]}
-        last_rule=${ruleArr[-1]}
-        
-        ## 만약 여러 개행으로 하나의 rule+cont+ans+limit이 끝난다면? 그대로 이어서는 안된다. 새로 추가하도록 내버려 둬야 한다.
-        if [[ $line != *"rule : "* ]]
-        then
-            ruleArr+=($last_rule)
-        fi
-}
-
-detectPrghAndSavePriorStr(){
-    local priorAppendStr="$1"
-    local line="$2"
-    log "[getRules] : face a paragraph : detected continuous newlines : $newLineCount"
-    newLineCount=0
-    # log "[getRules] : newLineCount : init : $newLineCount"
-    savePriorLinesToCurStageArr "$priorAppendStr"
-    priorAppendStr=""
-
-    if ! isTransitionNextArr "$line";
-    then
-        copyRuleForNextPrgp
-    fi
-
-    echo "$priorAppendStr"
-
-}
-
-# isFaceParagraphThenSplitAndStore(){
-#     if isMeetNewline "$line";
-#     then
-#         if [ $newLineCount -eq 0 ] # 연속된 개행을 받지 않는다.
-#         then
-#             str+="\n"
-#         fi
-#         newLineCount=$(( newLineCount + 1))
-#         # log "[getRules] : newLineCount : meet new line: $newLineCount"
-
-#         continue
-#     else
-#         if [ $newLineCount -eq 1 ]
-#         then
-#             newLineCount=0
-#         elif [ $newLineCount -gt 1 ]
-#         then
-#             detectPrghAndSavePriorStr
-#         fi
-#     fi
-# }
 
 isValidLine(){
     local apdStr="$1"
     if [[ ! -z $apdStr ]] || [[ "$apdStr" != "" ]]
     then
-        # echo 0
         return 0
     else
-        # echo 1
         return 1
     fi
 }
@@ -542,7 +467,7 @@ appendApdStr(){
 }
 
 checkMissingStageAndFillArr(){
-        # rule, cont, ans, limit 순서인데 건너 뛰었을 때, 중간의 arr들을 빈값으로 넣는다.
+    # rule, cont, ans, limit 순서인데 건너 뛰었을 때, 중간의 arr들을 빈값으로 넣는다.
     # currentStage을 통해서 현재 순서를 파악한다.
     # curStageArrIdx는 새로운 종류의 arr을 만났을 때 해당 arr의 값을 부여.
     # currentStage과 curStageArrIdx을 비교한다. 새로운 arr을 만날 때마다 currentStage과 curStageArrIdx을 변화시킨다.
@@ -556,8 +481,8 @@ checkMissingStageAndFillArr(){
 
     if [ $curReadStage -lt $curReadArrIdx ]
     then
-        log "[collectNewApdStrUntilTransNewArr] runeNum=$ruleNum"
-        log "[collectNewApdStrUntilTransNewArr] skip : from $curReadStage to $curReadArrIdx"
+        log "[configLineAndInitNewStage] runeNum=$ruleNum"
+        log "[configLineAndInitNewStage] skip : from $curReadStage to $curReadArrIdx"
 
         fillMissingArrayFromTo $curReadStage $curReadArrIdx
         # 빈 arr들을 채웠으니 다시 currentStage을 curStageArrIdx와 동일하게 맞춰준다!
@@ -565,13 +490,13 @@ checkMissingStageAndFillArr(){
     fi
 }
 
-collectNewApdStrUntilTransNewArr(){
+configLineAndInitNewStage(){
 
 
     if [[ line_ref == $1 ]]
     then
         echo "-----------------------------------------ERROR-----------------------------------------"
-        echo "collectNewApdStrUntilTransNewArr name ref circular error. "
+        echo "configLineAndInitNewStage name ref circular error. "
         echo "local name ref has the same name of input"
         echo "---------------------------------------------------------------------------------------"
 
@@ -580,45 +505,44 @@ collectNewApdStrUntilTransNewArr(){
     local -n line_ref="$1"
 
     # 새로운 arr을 쓰기 위해 priorAppendStr을 모으기 "시작". 다른 arr가 나올 때 모아둔 priorAppendStr을 저장한다.
-        if [[ $line_ref == *"rule : "* ]]
+    if [[ $line_ref == *"rule : "* ]]
+    then
+        # startNewRuleArrStage
+        local curReadStage="$(getCurReadStage)"
+        local curReadArrIdx="$(getCurReadArrIdx)"
+        fillMissingArrayFromTo $curReadStage $lenAllArr
+
+        setCurReadArrIdx $rule_idx
+        setCurReadStage 0 # rule부터 다시 새로 시작!
+        
+        line_ref="${line_ref#"rule : "}"
+        rules+="RULE ${ruleNum} : $line_ref\n\n"
+
+        #지금 rule이 막 시작했으므로 초기화
+        line_ref="RULE ${ruleNum} : $line_ref"
+        ruleNum=$(( ruleNum + 1 ))
+
+    else
+        if [[ $line_ref == *"cont : "* ]]
         then
-            # startNewRuleArrStage
-            local curReadStage="$(getCurReadStage)"
-            local curReadArrIdx="$(getCurReadArrIdx)"
-            fillMissingArrayFromTo $curReadStage $lenAllArr
-
-            setCurReadArrIdx $rule_idx
-            setCurReadStage 0
-
-            line_ref="${line_ref#"rule : "}"
-            rules+="RULE ${ruleNum} : $line_ref\n\n"
-
-            #지금 rule이 막 시작했으므로 초기화
-            line_ref="RULE ${ruleNum} : $line_ref"
-            ruleNum=$(( ruleNum + 1 ))
-
-            # rule부터 다시 새로 시작!
-        else
-            if [[ $line_ref == *"cont : "* ]]
-            then
-                    # 새로운 종류의 arr을 시작하니까 setCurReadArrIdx  이 arr의 고유 index으로 다시 설정해준다.
-                    setCurReadArrIdx $cont_idx
-                    line_ref=("${line_ref#"cont : "}")
-            elif [[ $line_ref == *"ans : "* ]] # user input single line_ref as answer.
-            then
-                    setCurReadArrIdx $ans_idx
-                    line_ref=("${line_ref#"ans : "}")
-            elif [[ $line_ref == *"limit : "* ]]
-            then
-                    setCurReadArrIdx $lmt_idx
-                    line_ref=("${line_ref#"limit : "}")
-            fi
-
-            checkMissingStageAndFillArr
+                # 새로운 종류의 arr을 시작하니까 setCurReadArrIdx  이 arr의 고유 index으로 다시 설정해준다.
+                setCurReadArrIdx $cont_idx
+                line_ref=("${line_ref#"cont : "}")
+        elif [[ $line_ref == *"ans : "* ]] # user input single line_ref as answer.
+        then
+                setCurReadArrIdx $ans_idx
+                line_ref=("${line_ref#"ans : "}")
+        elif [[ $line_ref == *"limit : "* ]]
+        then
+                setCurReadArrIdx $lmt_idx
+                line_ref=("${line_ref#"limit : "}")
         fi
 
+        checkMissingStageAndFillArr
+    fi
 
-        clearApdStr
+
+    
 
 
 
@@ -627,18 +551,17 @@ collectNewApdStrUntilTransNewArr(){
 
 }
 
+finishOneStage(){
+    local apdStr="$(getApdStr)"
+    if isValidLine "$apdStr";#invalid when first line of txt. apdStr contains nothing, so empty string is put to ruleArr.
+    then
+        saveApdStrToCurStageArr "$apdStr"
+    fi
+}
 
 appendEachLineAndSave(){
-    # local priorAppendStr="$1"
     local line="$1"
-    # local priorAppendStr
-    log "[appendEachLineAndSave] read and acummulate : $line"
     # log "[appendEachLineAndSave] priorAppendStr input : $priorAppendStr"
-    # if [[ $line == *"rule : "* ]]
-    # then
-        # 새로 rule을 만났을 때, 입력 중인 내용이 있었으면 넣는다. 없으면 여기서는 pass. 
-        # 기존 것을 그 arr에 쓰고 rule을 쓸 준비!
-        # 맨 처음에 어차피 넣을게 없다. 
 
         
 
@@ -653,37 +576,17 @@ appendEachLineAndSave(){
     then
         # 기존에 읽던 arr의 index : curStageArrIdx.
         # 그 arr에 현재까지 내용을 넣는다.
+        log "[appendEachLineAndSave] : face new stage : pause : line until flush the apdStr"
+        
+        finishOneStage
 
         updateNextCurReadStage
-
-        # curReadStage="$(getCurReadStage)"
-        # curReadArrIdx="$(getCurReadArrIdx)"
-        # echo "before collect and save : curReadStage : $curReadStage. curReadArrIdx : $curReadArrIdx"
-
-        local apdStr="$(getApdStr)"
-        if isValidLine "$apdStr";#invalid when first line of txt. apdStr contains nothing, so empty string is put to ruleArr.
-        then
-            savePriorLinesToCurStageArr "$apdStr"
-        fi
-
-
-        collectNewApdStrUntilTransNewArr "line"
-
-
-        # curReadStage="$(getCurReadStage)"
-        # curReadArrIdx="$(getCurReadArrIdx)"
-        # echo "after collect and save : curReadStage : $curReadStage. curReadArrIdx : $curReadArrIdx"
-
-
-        # 새로 arr에 넣을 priorAppendStr을 초기화. 여기에 계속 누적
-        # priorAppendStr=""
-
+        configLineAndInitNewStage "line"
     fi
 
     #방금 읽은 줄을 priorAppendStr에 누적해서 추가!
     appendApdStr "$line\n"
 
-    # echo "$priorAppendStr"
 
 }
 
@@ -709,56 +612,90 @@ logResultOption(){
     fi
 }
 
-finishLastLine(){
+completeLastLine(){
 
-
+    
     local apdStr="$(getApdStr)"
     log "[getRules] reading done. fill left over"
-    savePriorLinesToCurStageArr "$apdStr"
+    saveApdStrToCurStageArr "$apdStr"
 
     # 마지막 오브 마지막 limit은 다른 arr을 만나지 않는다. 마지막 줄 str을 저장해준다.
-    
     # 새로운 arr을 만나야 업데이트를 해준다. 그런데 만나지 못하고 읽기가 끝나서 업데이트를 수동으로 해줘야 한다.
     updateNextCurReadStage
-    local currentStage="$(getCurReadStage)"
-    fillMissingArrayFromTo $currentStage $lenAllArr
+    local curReadStage="$(getCurReadStage)"
+    fillMissingArrayFromTo $curReadStage $lenAllArr
 }
 
+
+copyRuleForNextPrgp(){
+
+        last_rule=${ruleArr[-1]}
+        
+        ## 만약 여러 개행으로 하나의 rule+cont+ans+limit이 끝난다면? 그대로 이어서는 안된다. 새로 추가하도록 내버려 둬야 한다.
+        if [[ $line != *"rule : "* ]]
+        then
+            ruleArr+=($last_rule)
+        fi
+}
+
+
+
+splitPrgh(){
+    
+    local line="$1"
+    if ! isTransitionNextArr "$line";
+    then
+        log "[splitPrgh] : not transition to new arr."
+        finishOneStage
+        copyRuleForNextPrgp
+        local curReadStage="$(getCurReadStage)"
+        fillMissingArrayFromTo $(( curReadStage+1 )) $lenAllArr
+    fi
+
+}
+isMeetNewline(){
+    local line=$1
+
+    if [[ $line == "" ]]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
+
+isParagraphThenSplitAndSave(){
+    local line="$1"
+    if isMeetNewline "$line";
+    then
+            newLineCount=$(( newLineCount + 1))
+            log "[isParagraphThenSplitAndSave] : newLineCount : meet new line: $newLineCount"
+    else
+        if [ $newLineCount -eq 1 ]
+        then
+            newLineCount=0
+        elif [ $newLineCount -gt 1 ]
+        then
+            log "[isParagraphThenSplitAndSave] : face a paragraph : detected continuous newlines : $newLineCount"
+
+            splitPrgh "$line"
+            newLineCount=0
+        fi
+    fi
+}
 
 getRules(){
     # 읽은 뒤 쪼갤 때 newline단위로 줄을 구분해야 한다.
     priorIFS=$IFS
     IFS=$'\n'
 
-
-
-
     initializeReading
 
-    # local priorAppendStr
     while read -r line || [ -n "$line" ]; do
-    # while read -r line;
-    # do  
-        
-        # if isMeetNewline "$line";
-        # then
-        #     if [ $newLineCount -eq 0 ] # 연속된 개행을 받지 않는다.
-        #     then
-        #         priorAppendStr+="\n"
-        #     fi
-        #     newLineCount=$(( newLineCount + 1))
-        #     # log "[getRules] : newLineCount : meet new line: $newLineCount"
+        log "[getRules] read and acummulate : $line"
 
-        #     continue
-        # else
-        #     if [ $newLineCount -eq 1 ]
-        #     then
-        #         newLineCount=0
-        #     elif [ $newLineCount -gt 1 ]
-        #     then
-        #         priorAppendStr="$(detectPrghAndSavePriorStr "$priorAppendStr" "$line")"
-        #     fi
-        # fi
+        isParagraphThenSplitAndSave "$line"
         
         appendEachLineAndSave "$line"
 
@@ -769,14 +706,10 @@ getRules(){
     # c 기준으로 텍스트는 개행문자로 끝이 나야 한다. 그게 아니면 에러를 발생시키고 마지막 while을 실행하지 않는다.
     # https://stackoverflow.com/questions/12916352/shell-script-read-missing-last-line
     # 그래서... 
-    finishLastLine
-
-    
-
+    completeLastLine
     
     logResultOption
 
-    # echo $rules
     IFS=$priorIFS
 
 
