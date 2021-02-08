@@ -6,6 +6,8 @@ declare -a limitArr=()
 declare -a completeArr=()
 declare -a msgArr=()
 
+source dir.sh
+
 allArr=( ruleArr contArr ansArr limitArr completeArr)
 lenAllArr=${#allArr[@]}
 
@@ -22,7 +24,7 @@ log(){
 updateVerses(){
     curDir=$(pwd)
     log "[updateVerses] : move to bible dir"
-    cd '/Users/baek/OneDrive/사진/삼성 갤러리/Pictures/Bible'
+    cd "$IMG_DIR"
     log "[updateVerses] : pwd: $(pwd)"
 
     v=$(ls)
@@ -43,7 +45,7 @@ viewVerse(){
 
     genVerseIDx
     log "[viewVerse] opening ${vArr[${idxV}]}"
-    open -a Preview "/Users/baek/OneDrive/사진/삼성 갤러리/Pictures/Bible/${vArr[${idxV}]}";
+    open -a Preview "$IMG_DIR/${vArr[${idxV}]}";
     # $(sleep 10 || log 10 passed!) &
     osascript -e "tell application \"Preview\"
 	set bounds of front window to {768, 0, 1536, 960}
@@ -262,7 +264,10 @@ cleanseStrAndStore(){
     # local -n refArr="$2"
     # local str="$1"
     # local refArr="$2"
-    str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+    if [[ ! -z $str ]]
+    then
+        str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+    fi
     # str=${str%% *}
     log "[cleanseStrAndStore] : final string : |$str|"
     log "[cleanseStrAndStore] : arr : |${refArr[*]}|"
