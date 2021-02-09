@@ -1,4 +1,3 @@
-# origin_IFS=$IFS
 declare -a ruleArr=()
 declare -a contArr=()
 declare -a ansArr=()
@@ -11,7 +10,7 @@ source dir.sh
 allArr=( ruleArr contArr ansArr limitArr completeArr)
 lenAllArr=${#allArr[@]}
 
-SPLIT_BASE_LEN=500
+SPLIT_BASE_LEN=1000
 
 
 log(){
@@ -266,7 +265,21 @@ cleanseStrAndStore(){
     # local refArr="$2"
     if [[ ! -z $str ]]
     then
-        str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+    #     # {
+    #         # echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' >> /dev/null
+    #     # } || {
+    #     #     echo "iconv fail"
+    #     #     echo "$str"
+    #     # }
+    #     # str=$(echo "$str" | sed -e 's/\n$//')
+
+    #     # https://stackoverflow.com/questions/11287564/getting-sed-error-illegal-byte-sequence-in-bash
+    #     # str=$(echo -e "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba') # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+        str=$(echo -e "$str" | sed -e 's/ $//') # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+
+
+    #     # str=$(LC_CTYPE=C echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba') # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+    
     fi
     # str=${str%% *}
     log "[cleanseStrAndStore] : final string : |$str|"
@@ -282,7 +295,10 @@ splitLargeStrAndStore(){
     do
         # echo $(( ${#str} / $SPLIT_BASE_LEN ))
         log "[target] : |$str|"
-        frontSeg="${str:0:$SPLIT_BASE_LEN}"
+        # 구원자!!
+        # https://forum.ubuntu-kr.org/viewtopic.php?t=25616
+        frontSeg="$(echo $str | cut -b -$SPLIT_BASE_LEN | iconv 2>/dev/null)"
+        # frontSeg="${str:0:$SPLIT_BASE_LEN}"
         log "[frontSeg] : |$frontSeg|"
         endSeg="${str#"$frontSeg"}"
         # endSeg="${str#$frontSeg}" # 제대로 잘라내지 못한다. 중간에 껴있는 space나 개행 때문에 통으로 인식하지 못한다. 숫자는 {}을 붙이고 문자는 ""을 붙여라!
@@ -669,6 +685,15 @@ isMeetNewline(){
     fi
 }
 
+isMeetContinuousNewline(){
+    if [ $newLineCount -gt 1 ]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
 
 isParagraphThenSplitAndSave(){
     local line="$1"
@@ -696,11 +721,17 @@ getRules(){
     IFS=$'\n'
 
     initializeReading
+    while read -r line
+    do
 
-    while read -r line || [ -n "$line" ]; do
+    # while read -r line || [ -n "$line" ]; do
         log "[getRules] read and acummulate : $line"
-
         isParagraphThenSplitAndSave "$line"
+        
+        if isMeetContinuousNewline;
+        then
+            continue
+        fi
         
         appendEachLineAndSave "$line"
 
