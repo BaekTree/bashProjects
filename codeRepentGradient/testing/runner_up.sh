@@ -8,6 +8,6 @@ do
     # variance test
     limitT=$(( $base + $(( $RANDOM % $var )) )) 
     #echo $limitT
-    ./timer_up.sh $limitT;   
+    /Users/baek/project/bashProjects/codeRepentGradient/testing/timer_up.sh $limitT;
     echo one is done!
 done

@@ -1,17 +1,38 @@
+# origin_IFS=$IFS
+declare -a ruleArr=()
+declare -a contArr=()
+declare -a ansArr=()
+declare -a limitArr=()
+declare -a completeArr=()
+declare -a msgArr=()
+
+source dir.sh
+
+allArr=( ruleArr contArr ansArr limitArr completeArr)
+lenAllArr=${#allArr[@]}
+
+SPLIT_BASE_LEN=500
+
+
+log(){
+    if [[ $log == "-l" ]]
+    then
+        echo -e "$1"
+    fi
+}
 
 updateVerses(){
     curDir=$(pwd)
-    echo move to bible dir
-    cd '/Users/baek/OneDrive/사진/삼성 갤러리/Pictures/Bible'
-    echo pwd: $(pwd)
+    log "[updateVerses] : move to bible dir"
+    cd "$IMG_DIR"
+    log "[updateVerses] : pwd: $(pwd)"
 
     v=$(ls)
     vArr=($v)
 
-    # echo ${vArr[17]}
     numV=${#vArr[@]}
 
-    echo back to cur dir : $curDir
+    log "[updateVerses] : back to cur dir : $curDir"
     cd ${curDir}
 }
 
@@ -23,13 +44,12 @@ viewVerse(){
     # closeVerse
 
     genVerseIDx
-    echo "opening ${vArr[${idxV}]}"
-    open -a Preview "/Users/baek/OneDrive/사진/삼성 갤러리/Pictures/Bible/${vArr[${idxV}]}"
-    # $(sleep 10 || echo 10 passed!) &
-    sleep 10
-    $(osascript -e "tell application \"Preview\"
-	set bounds of front window to {0, 0, 600, 900}
-    end tell")
+    log "[viewVerse] opening ${vArr[${idxV}]}"
+    open -a Preview "$IMG_DIR/${vArr[${idxV}]}";
+    # $(sleep 10 || log 10 passed!) &
+    osascript -e "tell application \"Preview\"
+	set bounds of front window to {768, 0, 1536, 960}
+    end tell"
 
 }
 
@@ -44,19 +64,35 @@ closeVerse(){
     pids=$(pgrep Preview)   
     if [ -z $pids ]
     then
-        echo no pids
+        log "[closeVerse] : no pids"
     else
-        echo preview pids : ${pids}
-        echo killing preview $pids
+        log "[closeVerse] : preview pids : ${pids}"
+        log "[closeVerse] : killing preview $pids"
         kill -9 ${pids}
         sleep 0.5
     fi
 }
 
 
-apple_text(){
-    # echo "apple_text input : $1"
-    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Yes\", \"No\"} default answer \"\" default button \"No\"")
+apple_dialog(){
+    local mode=$1
+    local dlg_arg=$@
+
+    if [ "$mode" = "text" ]
+    then
+        apple_dialog_text "$dlg_arg"
+    elif [ "$mode" = "show" ]
+    then
+        apple_dialog_show "$dlg_arg" "$@"
+    else
+        echo "ERROR in APPLE DIALOG MODE!"
+        exit 0
+    fi
+}
+
+apple_dialog_text(){
+    log "[apple_dialog_text input]----------------------------------------:\n$1\n----------------------------------------\n"
+    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Submit To God\", \"Back\"} default answer \"\" default button \"Submit To God\"")
     # closeVerse;
     parseBtnAns $res
     parseTxt $res
@@ -65,9 +101,25 @@ apple_text(){
 }
 
 
-apple_dialog(){
+apple_dialog_show(){
     # closeVerse
-    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Yes\", \"No\"} default button \"No\"")
+    local shw_arg=$2
+    # local shw_i
+    local btn_txt
+    # for shw_i in $shw_arg
+    # do
+        if [[ ! -z $shw_arg ]] && [[ $shw_arg = "single" ]]
+        then
+            btn_txt="buttons {\"Next\"}"
+        else
+            btn_txt="buttons {\"Next\",\"Back\"}"
+        fi
+    # done
+
+
+    # res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt default button \"Next\"")
+    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt")
+
     parseBtnAns $res
     viewVerse &
 }
@@ -76,26 +128,26 @@ apple_dialog(){
 # problematic!
 parseBtnAns(){
     priorIFS=$IFS
-    IFS=$": "
+    IFS=$":,"
     local arg=($1)
+    log "[parseBtnAns] ARG : ${arg[@]}"
 
-    # for (( i=0; i<${#arg[@]}; i++ ))
-    local i
-    for i in ${arg[@]}
+    local a
+    for a in ${arg[@]}
     do
-        if [ ${i} = "Yes" -o ${i} = "No" ]
-        # echo 
+        log "[parseBtnAns] : arg array element : $a"
+        if [ ${a} = "Submit To God" -o ${a} = "Next" -o ${a} = "Back" ]
         then
-            ans=${i}
-            echo button answer is $ans
+            ans=${a}
+            log "[parseBtnAns] : ----------button answer is $ans----------"
         fi        
     done
     IFS=$priorIFS
 }
 
 parseTxt(){
-    echo parseTxt
-    echo $1
+    log "[parseTxt] parseTxt function init."
+    log "[parseTxt] input arg : $1"
     priorIFS=$IFS
     IFS=$",:"
     local arg=($1)
@@ -103,11 +155,11 @@ parseTxt(){
     local i
     for (( i=0; i<${#arg[@]}; i++ ))
     do
-        echo ${arg[i]}
+        log "[parseTxt] arg element : ${arg[i]}"
         if [ ${arg[i]} == " text returned" ]
         then
             msg=${arg[(( $i+1 ))]}
-            echo txt is $msg
+            log "[parseTxt] : txt is $msg"
         fi
         
     done
@@ -125,7 +177,7 @@ record(){
 
 printArrs(){
     #print Arr
-    echo -e "\n\n\nprint all items"
+    echo -e "\n\n\n------------------------------------------------------------------------------------------------------print all items------------------------------------------------------------------------------------------------------"
     for (( i=0; i<${#ruleArr[@]}; i++ ))
     do
         
@@ -133,6 +185,8 @@ printArrs(){
         echo -e "contArr${i} : |${contArr[$i]}|"
         echo -e "ansArr${i} : |${ansArr[$i]}|"
         echo -e "limitArr${i} : |${limitArr[$i]}|"
+        echo -e "completeArr${i} : |${completeArr[$i]}|"
+
         echo -e "-----\n\n\n"
         # for (( j=0; j<${#RAC[@]}; j++ ))
         # do
@@ -151,8 +205,11 @@ printArrs(){
     echo size of contArr : ${#contArr[@]}
     echo size of ansArr : ${#ansArr[@]}
     echo size of limitArr : ${#limitArr[@]}
+    echo size of completeArr : ${#completeArr[@]}
+    
+    echo 
+    echo $(date)
 
-    echo
 }
 
 
@@ -161,250 +218,164 @@ printArrs(){
 
 FILL
 
-fill_left_over(){
+fillMissingArrayFromTo(){
     # 새로운 rule을 만났을 때 넣을 값이 없던 arr들 채운다 : 남아있는 cont ans limit을 빈 값으로 넣는다.
-    # limit 값이 있었으면 order = 4, allArr.length = 4가 되어서 그냥 pass.
     local left_over_idx=$1
     local idx_until_this_idx=$2
-    # echo ----------
-    # echo "new : from $left_over_idx to $idx_until_this_idx"
+    log "[fillMissingArrayFromTo] fill array index : from $left_over_idx to $idx_until_this_idx"
     for (( ; left_over_idx<$idx_until_this_idx; left_over_idx++ ))
     do
-        
         local t=${allArr[$left_over_idx]}
-        declare -n refArr=${t[@]}
+        declare -n tmpArr=${t[@]}
         local empty=" "
         # 만약 limit이 빈칸이면 숫자 0을 넣는다. init 함수에서 number을 비교해서 타입 에러가 난다 
         if [ $left_over_idx -eq $lmt_idx ]
         then
             empty=0
         fi
-        refArr+=($empty)
-        # refArr+=("emptyNew")
-        # echo "t=$t, line=\" \""
-        # echo ${refArr[@]}
+        log "[fillMissingArrayFromTo] cur rule : $ruleNum, array to be filled : $t, line=\" \""
+        tmpArr+=($empty)
+        # tmpArr+=("emptyNew")
+        log "[fillMissingArrayFromTo] array append : |${tmpArr[*]}|"
     done
-
-    
 }
 
-<< "WRITE"
-    
-WRITE
+isLargeStr(){
+    local str=$1
 
-putTxtToArr(){
+    if [ ${#str} -gt $SPLIT_BASE_LEN ]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
 
-    # 기존에 읽던 arr의 index : arrIdx.
-    # 그 arr에 현재까지 내용을 넣는다.
-    local arrIdx=$1
-    local str=$2
-    local arr_by_idx=${allArr[$arrIdx]}
-    declare -n refArr=${arr_by_idx[@]}
-    # echo "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
-    str=$(echo -e "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' -e 's/ *$//')
-    # echo "|$str|"
-    # 기존 arr의 누적해왔던 값을 기존 arr에 쓴다.
+cleanseStrAndStore(){
+    local str="$1"
+    local curArr="$2"
+    log "[cleanseStrAndStore] : curArr : |$curArr|"
+
+
+    declare -n refArr=$curArr
+    log "[cleanseStrAndStore] : original : |$str|"
+   
+   
+    # local -n refArr="$2"
+    # local str="$1"
+    # local refArr="$2"
+    if [[ ! -z $str ]]
+    then
+        str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+    fi
+    # str=${str%% *}
+    log "[cleanseStrAndStore] : final string : |$str|"
+    log "[cleanseStrAndStore] : arr : |${refArr[*]}|"
     refArr+=("$str")
+    log "[cleanseStrAndStore] : array append result : |${refArr[*]}|"
+}
+
+splitLargeStrAndStore(){
+    local str="$1"
+    local curArr="$2"
+    while [ $(( ${#str} / $SPLIT_BASE_LEN )) -gt  0 ]
+    do
+        # echo $(( ${#str} / $SPLIT_BASE_LEN ))
+        log "[target] : |$str|"
+        frontSeg="${str:0:$SPLIT_BASE_LEN}"
+        log "[frontSeg] : |$frontSeg|"
+        endSeg="${str#"$frontSeg"}"
+        # endSeg="${str#$frontSeg}" # 제대로 잘라내지 못한다. 중간에 껴있는 space나 개행 때문에 통으로 인식하지 못한다. 숫자는 {}을 붙이고 문자는 ""을 붙여라!
+        log "[endSeg] : |$endSeg|"
+        # exit 0
+        ### 
+        # endSeg=${str:$SPLIT_BASE_LEN} # $SPLIT_BASE_LEN자부터 끝까지. 뒷부분이 된다.
+
+
+
+        # frontSeg=${str%$endSeg}
+        log "[splitLargeStrAndStore] : cut $SPLIT_BASE_LEN chars : |$frontSeg|"
+
+        cleanseStrAndStore "$frontSeg" "$curArr"
+
+        # cleanStr=$(echo -e "$frontSeg" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+        # # str=${str%% *}
+        # log "[splitLargeStrAndStore] :cleanStr: |$cleanStr|"
+
+        
+        local curReadStage="$(getCurReadStage)"
+
+        fillMissingArrayFromTo $(( curReadStage+1 )) $lenAllArr
+        last_rule=${ruleArr[-1]}
+        ruleArr+=($last_rule)
+
+        str="$endSeg"
+    done
+    cleanseStrAndStore "$str" "$curArr"
+
+}
+
+saveApdStrToCurStageArr(){
+    # 기존에 읽던 arr의 index : curStageArrIdx.
+    # 그 arr에 현재까지 내용을 넣는다.
+    # priorIFS=$IFS
+    # IFS=$origin_IFS
+    local getCurReadArrIdx="$(getCurReadArrIdx)"
+    local str="$1"
+    local curArr=${allArr[$getCurReadArrIdx]}
+    log "\n[saveApdStrToCurStageArr]-------------------------------------------|"
+    log "                                                                      |"
+    log "[saveApdStrToCurStageArr] : current array index: $curArr"
+    # log "[saveApdStrToCurStageArr] : $str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
+    # 앞뒤에 붙어있는 개행과 빈칸을 지운다. 
+    # str="$(echo -e "$str" | sed '/^$/d')"
+    # str=${str%%\\n*}# 작동 안함
+    # str=$(echo -e "$str" | sed -e 's/ *$//g') # 뒤에 빈칸 지우기.
+    # str="$(echo -e "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba')"
+    # str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+    # # str=${str%% *}
+    log "[saveApdStrToCurStageArr] : str : |$str|"
+    # 기존 arr의 누적해왔던 값을 기존 arr에 쓴다.
+    # SPLIT_BASE_LEN=500
+
+    # echo "$str"
+    # echo "${#str}"
+
+    if isLargeStr "$str";
+    then
+        # echo $(( ${#str} / $SPLIT_BASE_LEN ))
+        splitLargeStrAndStore "$str" "$curArr"
+    else
+        cleanseStrAndStore "$str" "$curArr"
+    fi
+
+    # str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+    # # str=${str%% *}
+    # log "[saveApdStrToCurStageArr] : |$str|"
+    # refArr+=("$str")
+
+
+    # IFS=$priorIFS
+
+    log "                                                                      |"
+    log "----------------------------------------------------------------------|\n"
+
+    clearApdStr
 }
 
 
 
 << "READ"
 
-테스트케이스
-rule : 을 발견한다 ruleArr에 저장할 것이다.
-엔터가 있어도 계쏙 rule에 저장
-
-cont나 ans을 만나면 그때 contArr, ansArr에 넣는다.
-빈줄을 만나면 다음 rule으로 넘어간다.
-
-현재 저장할 arr을 명시해둔다. 근데 그게 되나? bash에서?
-
-curArr=$ruleArr
-curAA+=...
-
----
-
-전통적인 시도
-테스트케이스
-rule을 만난다. 
-빈칸이나 cont가 있거나 ans가 있지 않으면 모두 ruleArr[i]에 저장한다.
-ruleArr+='\n'nextLine
-
-만약 빈줄을 만났는데, 현재 arr이 rule이었다면
-cont, ans, limit arr을 모두 저장해야 한다. 
-
-if curArr=rule
-    fill cont
-    fill ans
-    fill limit
-if curArr=cont
-    fill ans
-    fill limit
-
-만약 array을 넣거나 nameref을 넣을 수 있다면?
----
-
-
-i=0
-order=0
-while read line
-    line을 읽는다
-    if line = empty line
-        for idx = order to len RAC
-            tempArr=RAC[idx] arr
-            tempArr+=" "
-        order=0
-        continue
-
-    is rule, cont, ans, limit?
-    if rule
-        i=0
-        curArr[rule]
-        curArr+=(line)
-    if cont
-        i=1
-        curArr[cont]
-        curArr+=(line)
-    if ans
-        i=2
-        curArr[ans]
-        curArr+=(line)
-    if limit
-        i=3
-        curArr[limit]
-        curArr+=(line)
-    
-
-    if order < i
-        for idx = order to i
-            tempArr=RAC[idx] arr
-            tempArr+=" "
-        order = i
-
-    order++
-
-    if order > 2
-        order = -1
-    
-
-
-done
-
----
-
-declare -a ruleArr
-declare -a contArr
-declare -a ansArr
-declare -a limitArr
-
-allArr=( ruleArr contArr ansArr limitArr )
-arrIdx=0
-while read line
-do
-    if [ line = "" ]
-        local read_i
-        for (( read_i=$arrIdx; read_i<${#allArr[@]}; read_i++ ))
-        do
-            t=${allArr[$read_i]}
-            declare -n tmpArr=${t[@]}
-            tempArr+=(" ")
-        done
-        arrIdx=0
-        continue
-
-    t=${allArr[$arrIdx]}
-    declare -n tmpArr=${t[@]}
-    tempArr+=(line)
-    arrIdx=$(( arrIdx + 1 ))
-    if [ arrIdx \gt 2 ]
-    then
-        arrIdx=0
-    fi
-done
-
-
----
-
-A : ( rule cont ans limit )
-for i in A
-if curArr[i] = rule
-    idx=i
-    break
-
-for i=idx to A.len
-    fill A[i]
-
----
-검색
-https://unix.stackexchange.com/questions/545502/bash-array-of-arrays
-
-
-declare -a ruleArr
-declare -a contArr
-declare -a ansArr
-declare -a limitArr
-arr=( ruleArr contArr ansArr limitArr )
-
-for i in $arr
-do
-    declare -n temtArr=$i
-
-    for j in $tempArr
-        j+=(...)
-done
-
-이것을 적용하면...
-
-while read line
-do
-    if line = empty line
-        declare -n arr=
-done
-
----
-만약에 개행문자를 포함하고 있다면?
-루프를 돌면서 현재 모드를 기억하고 있고
-새로운 모드가 나오기 전까지는 계속 누적만 해둔다.
-그리고 새로운 모드가 나오면 한꺼번에 저장한다.
-
-그리고 여전히 rule이 나오면 나오지 않은 항목들은 모두 빈칸으로 저장한다.
-건너 뛰어도 사이의 모드들은 빈칸으로 저장한다.
-
-루프가 끝나면 마무리로 저장을 해줘야 한다. 
-현재 상태가 저장하는 순간이 새로운 모드를 만나야 하는 것인데 마지막은 새로운 모드를 만나지 않고 끝나버린다.
-explicit하게 저장을 해줘야 한다.
-
-
-
 READ
 
-declare -a ruleArr=()
-declare -a contArr=()
-declare -a ansArr=()
-declare -a limitArr=()
 
-getRules(){
-    # 읽은 뒤 쪼갤 때 newline단위로 줄을 구분해야 한다.
-    priorIFS=$IFS
-    IFS=$'\n'
 
-    curFile=$0
 
-    if [ $debug = "-d" ]
-    then
-        file='./rulesTest.txt'
-    elif [[ $curFile = *"_up"* ]]
-    then
-        echo "This is in dev!"
-        file='./rules_up.txt'
-    else
-        file='./rules.txt'
-    fi
 
-    allArr=( ruleArr contArr ansArr limitArr )
-    lenAllArr=${#allArr[@]}
 
+
+assignEachcurStagecurStageArrIdx(){
     #findLimitArr idx
     local find_idx
     for (( find_idx=0; find_idx<${#allArr[@]}; find_idx++ ))
@@ -423,309 +394,331 @@ getRules(){
             lmt_idx=$find_idx
         fi
     done
+}
 
-    #limit ruleArr idx
-    order=${#allArr[@]}
-    arrIdx=0
+CUR_READ_STAGE=${#allArr[@]}
+CUR_READ_ARR_IDX=0
 
+getCurReadStage(){
+    echo "$CUR_READ_STAGE"
+}
+
+setCurReadStage(){
+    local st="$1"
+    CUR_READ_STAGE="$st"
+    log "[setCurReadStage] : update CUR_READ_STAGE : $CUR_READ_STAGE"
+}
+
+updateNextCurReadStage(){
+    CUR_READ_STAGE=$(( CUR_READ_STAGE + 1 ))
+    log "[setCurReadStage] : update CUR_READ_STAGE : $CUR_READ_STAGE"
+
+}
+
+getCurReadArrIdx(){
+    echo "$CUR_READ_ARR_IDX"
+}
+
+setCurReadArrIdx(){
+    local idx="$1"
+    CUR_READ_ARR_IDX=$idx
+}
+
+initializeReading(){
+    assignEachcurStagecurStageArrIdx
+    
     ruleNum=1
-    str=""  
+    newLineCount=0
+}
 
-    while read line;
-    do  
-        if [[ $line == "" ]]
+
+
+isTransitionNextArr(){
+    local line="$1"
+    log "[isTransitionNextArr] : input : |$line|"
+    if [[ $line == *"rule : "* ]] || [[ $line == *"cont : "* ]] || [[ $line == *"ans : "* ]] || [[ $line == *"limit : "* ]]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
+
+isValidLine(){
+    local apdStr="$1"
+    if [[ ! -z $apdStr ]] || [[ "$apdStr" != "" ]]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
+
+APD_STR=""
+
+clearApdStr(){
+    APD_STR=""
+}
+
+getApdStr(){
+    echo "$APD_STR"
+}
+
+appendApdStr(){
+    local s="$1"
+    APD_STR+="$s"
+}
+
+checkMissingStageAndFillArr(){
+    # rule, cont, ans, limit 순서인데 건너 뛰었을 때, 중간의 arr들을 빈값으로 넣는다.
+    # currentStage을 통해서 현재 순서를 파악한다.
+    # curStageArrIdx는 새로운 종류의 arr을 만났을 때 해당 arr의 값을 부여.
+    # currentStage과 curStageArrIdx을 비교한다. 새로운 arr을 만날 때마다 currentStage과 curStageArrIdx을 변화시킨다.
+    # 새로운 arr을 만나면 currentStage은 1씩 증가하고, curStageArrIdx는 해당 arr의 index을 부여.
+    # 만약 건너뛴게 없다면 currentStage과 curStageArrIdx가 동일하게 1씩 증가. 만약 건너뛰었다면 그만큼 차이가 발생!
+    # 그 인덱스들 사이의 arr에 빈값을 부여!
+    # echo "----------currentStage : $currentStage and curStageArrIdx : $curStageArrIdx-----------"
+
+    local curReadStage="$(getCurReadStage)"
+    local curReadArrIdx="$(getCurReadArrIdx)"
+
+    if [ $curReadStage -lt $curReadArrIdx ]
+    then
+        log "[configLineAndInitNewStage] runeNum=$ruleNum"
+        log "[configLineAndInitNewStage] skip : from $curReadStage to $curReadArrIdx"
+
+        fillMissingArrayFromTo $curReadStage $curReadArrIdx
+        # 빈 arr들을 채웠으니 다시 currentStage을 curStageArrIdx와 동일하게 맞춰준다!
+        setCurReadStage $curReadArrIdx
+    fi
+}
+
+configLineAndInitNewStage(){
+
+
+    if [[ line_ref == $1 ]]
+    then
+        echo "-----------------------------------------ERROR-----------------------------------------"
+        echo "configLineAndInitNewStage name ref circular error. "
+        echo "local name ref has the same name of input"
+        echo "---------------------------------------------------------------------------------------"
+
+        exit 1
+    fi
+    local -n line_ref="$1"
+
+    # 새로운 arr을 쓰기 위해 priorAppendStr을 모으기 "시작". 다른 arr가 나올 때 모아둔 priorAppendStr을 저장한다.
+    if [[ $line_ref == *"rule : "* ]]
+    then
+        # startNewRuleArrStage
+        local curReadStage="$(getCurReadStage)"
+        local curReadArrIdx="$(getCurReadArrIdx)"
+        fillMissingArrayFromTo $curReadStage $lenAllArr
+
+        setCurReadArrIdx $rule_idx
+        setCurReadStage 0 # rule부터 다시 새로 시작!
+        
+        line_ref="${line_ref#"rule : "}"
+        rules+="RULE ${ruleNum} : $line_ref\n\n"
+
+        #지금 rule이 막 시작했으므로 초기화
+        line_ref="RULE ${ruleNum} : $line_ref"
+        ruleNum=$(( ruleNum + 1 ))
+
+    else
+        if [[ $line_ref == *"cont : "* ]]
         then
-            str+="\\n"
-            continue
+                # 새로운 종류의 arr을 시작하니까 setCurReadArrIdx  이 arr의 고유 index으로 다시 설정해준다.
+                setCurReadArrIdx $cont_idx
+                line_ref=("${line_ref#"cont : "}")
+        elif [[ $line_ref == *"ans : "* ]] # user input single line_ref as answer.
+        then
+                setCurReadArrIdx $ans_idx
+                line_ref=("${line_ref#"ans : "}")
+        elif [[ $line_ref == *"limit : "* ]]
+        then
+                setCurReadArrIdx $lmt_idx
+                line_ref=("${line_ref#"limit : "}")
         fi
 
-        # echo "read and acummulate : $line"
-        if [[ $line == *"rule : "* ]]
-        then
-            # 새로 rule을 만났을 때, 입력 중인 내용이 있었으면 넣는다. 없으면 여기서는 pass. 
-            # 기존 것을 그 arr에 쓰고 rule을 쓸 준비!
-            if [ "$str" != "" ]
-            then
-                putTxtToArr $arrIdx $str
-            fi
-            # echo
+        checkMissingStageAndFillArr
+    fi
 
-            # 직전에 쓰고 있던 값에서 rule으로 바뀌었으니 더해준다. 더 이상 기존의 order가 아니다!
-            order=$(( order + 1 ))
-
-            arrIdx=$rule_idx
-            line="${line#"rule : "}"
-            rules+="RULE ${ruleNum} : $line\n\n\n\n"
-
-            #지금 rule이 막 시작했으므로 초기화
-            str=""
-            str+="RULE ${ruleNum} : $line"\\n""
-            ruleNum=$(( ruleNum + 1 ))
-            
-            # 새로운 rule을 만났을 때 넣을 값이 없던 arr들 채운다 : 남아있는 cont ans limit을 빈 값으로 넣는다.
-            # limit 값이 있었으면 order = 4, allArr.length = 4가 되어서 그냥 pass.
-            fill_left_over $order $lenAllArr
-
-            # rule부터 다시 새로 시작!
-            order=0
-
-            # rule으로 시작하고, 방금 줄은 str에 입력했으니 이제 계속 누적을 하고, rule이 아닌 줄을 만났을 때 ruleArr에 넣는다!
-            continue
-
-        # 이 부분의 역할 : 처음 rule cont ans limit을 발견했을 때 모드 전환. 새로운 arr에 저장한다고 인식해야 한다.
-        # 기존 arr의 내용을 쓰는 부분
-        # 내용 중간의 개행들은 살려두어야 하지만, 마지막 줄 이후에 다른 arr을 만나기까지 딸려오는 개행들은 지워야 한다.
-        # sed을 사용 : s/*\n$//이 잘 안된다. sed는 개행을 기준으로 해서. 그래서... sed를 더 깊게... ba 사용.
-        elif [[ $line == *"cont : "* ]] || [[ $line == *"ans : "* ]] || [[ $line == *"limit : "* ]]
-        then
-            # 기존에 읽던 arr의 index : arrIdx.
-            # 그 arr에 현재까지 내용을 넣는다.
-            putTxtToArr $arrIdx $str
-
-            order=$(( order + 1 ))
-
-             # 새로운 arr을 쓰기 위해 str을 모으기 "시작". 다른 arr가 나올 때 모아둔 str을 저장한다.
-            if [[ $line == *"cont : "* ]]
-            then
-                # 새로운 종류의 arr을 시작하니까 arrIdx을 이 arr의 고유 index으로 다시 설정해준다.
-                arrIdx=$cont_idx
-                line=("${line#"cont : "}")
-            elif [[ $line == *"ans : "* ]] # user input single line as answer.
-            then
-                arrIdx=$ans_idx
-                line=("${line#"ans : "}")
-            elif [[ $line == *"limit : "* ]]
-            then
-                arrIdx=$lmt_idx
-                line=("${line#"limit : "}")
-            fi
-
-            # 새로 arr에 넣을 str을 초기화. 여기에 계속 누적
-            str=""
-        fi
-
-        #방금 읽은 줄을 str에 누적해서 추가!
-        str+=$line$"\\n"
-
-        # rule, cont, ans, limit 순서인데 건너 뛰었을 때, 중간의 arr들을 빈값으로 넣는다.
-        # order을 통해서 현재 순서를 파악한다.
-        # arrIdx는 새로운 종류의 arr을 만났을 때 해당 arr의 값을 부여.
-        # order과 arrIdx을 비교한다. 새로운 arr을 만날 때마다 order과 arridx을 변화시킨다.
-        # 새로운 arr을 만나면 order은 1씩 증가하고, arrIdx는 해당 arr의 index을 부여.
-        # 만약 건너뛴게 없다면 order과 arrIdx가 동일하게 1씩 증가. 만약 건너뛰었다면 그만큼 차이가 발생!
-        # 그 인덱스들 사이의 arr에 빈값을 부여!
-        # echo "----------order : $order and arrIdx : $arrIdx-----------"
-        if [ $order -lt $arrIdx ]
-        then
-            # echo "runeNum=$ruleNum"
-            # echo "skip : from $order to $arrIdx"
-
-            fill_left_over $order $arrIdx
-            # 빈 arr들을 채웠으니 다시 order을 arrIdx와 동일하게 맞춰준다!
-            order=$arrIdx
-        fi
-
-
-        # if [ $order -gt 3 ]
-        # then
-        #     order=0
-        # fi
-    done < $file
-    putTxtToArr $arrIdx $str
-
-    # 마지막 오브 마지막 limit은 다른 arr을 만나지 않는다. 마지막 줄 str을 저장해준다.
-    fill_left_over $order $lenAllArr
 
     
 
 
 
-    # printArrs
-    # echo $rules
+
+
+
+}
+
+finishOneStage(){
+    local apdStr="$(getApdStr)"
+    if isValidLine "$apdStr";#invalid when first line of txt. apdStr contains nothing, so empty string is put to ruleArr.
+    then
+        saveApdStrToCurStageArr "$apdStr"
+    fi
+}
+
+appendEachLineAndSave(){
+    local line="$1"
+    # log "[appendEachLineAndSave] priorAppendStr input : $priorAppendStr"
+
+        
+
+        # rule으로 시작하고, 방금 줄은 str에 입력했으니 이제 계속 누적을 하고, rule이 아닌 줄을 만났을 때 ruleArr에 넣는다!
+        # return
+
+    # 이 부분의 역할 : 처음 rule cont ans limit을 발견했을 때 모드 전환. 새로운 arr에 저장한다고 인식해야 한다.
+    # 기존 arr의 내용을 쓰는 부분
+    # 내용 중간의 개행들은 살려두어야 하지만, 마지막 줄 이후에 다른 arr을 만나기까지 딸려오는 개행들은 지워야 한다.
+    # sed을 사용 : s/*\n$//이 잘 안된다. sed는 개행을 기준으로 해서. 그래서... sed를 더 깊게... ba 사용.
+    if isTransitionNextArr "$line";
+    then
+        # 기존에 읽던 arr의 index : curStageArrIdx.
+        # 그 arr에 현재까지 내용을 넣는다.
+        log "[appendEachLineAndSave] : face new stage : pause : line until flush the apdStr"
+        
+        finishOneStage
+
+        updateNextCurReadStage
+        configLineAndInitNewStage "line"
+    fi
+
+    #방금 읽은 줄을 priorAppendStr에 누적해서 추가!
+    appendApdStr "$line\n"
+
+
+}
+
+logResultOption(){
+
+    if [[ ! -z $debug ]] && [[ $debug = "-df" ]]
+    then
+        for (( lim_i=0; lim_i < ${#limitArr[@]}; lim_i++ ))
+        do
+            log "[getRules] : init limitArr."
+            limitArr[$lim_i]=0
+        done
+        for (( lim_i=0; lim_i < ${#ansArr[@]}; lim_i++ ))
+        do
+            log "[getRules] : init ansArr."
+            ansArr[$lim_i]=" "
+        done
+    fi
+
+    if [[ ! -z $log ]] && [[ $log = "-l" ]]
+    then
+        printArrs
+    fi
+}
+
+completeLastLine(){
+
+    
+    local apdStr="$(getApdStr)"
+    log "[getRules] reading done. fill left over"
+    saveApdStrToCurStageArr "$apdStr"
+
+    # 마지막 오브 마지막 limit은 다른 arr을 만나지 않는다. 마지막 줄 str을 저장해준다.
+    # 새로운 arr을 만나야 업데이트를 해준다. 그런데 만나지 못하고 읽기가 끝나서 업데이트를 수동으로 해줘야 한다.
+    updateNextCurReadStage
+    local curReadStage="$(getCurReadStage)"
+    fillMissingArrayFromTo $curReadStage $lenAllArr
+}
+
+
+copyRuleForNextPrgp(){
+
+        last_rule=${ruleArr[-1]}
+        
+        ## 만약 여러 개행으로 하나의 rule+cont+ans+limit이 끝난다면? 그대로 이어서는 안된다. 새로 추가하도록 내버려 둬야 한다.
+        if [[ $line != *"rule : "* ]]
+        then
+            ruleArr+=($last_rule)
+        fi
+}
+
+
+
+splitPrgh(){
+    
+    local line="$1"
+    if ! isTransitionNextArr "$line";
+    then
+        log "[splitPrgh] : not transition to new arr."
+        finishOneStage
+        copyRuleForNextPrgp
+        local curReadStage="$(getCurReadStage)"
+        fillMissingArrayFromTo $(( curReadStage+1 )) $lenAllArr
+    fi
+
+}
+isMeetNewline(){
+    local line=$1
+
+    if [[ $line == "" ]]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
+
+isParagraphThenSplitAndSave(){
+    local line="$1"
+    if isMeetNewline "$line";
+    then
+            newLineCount=$(( newLineCount + 1))
+            log "[isParagraphThenSplitAndSave] : newLineCount : meet new line: $newLineCount"
+    else
+        if [ $newLineCount -eq 1 ]
+        then
+            newLineCount=0
+        elif [ $newLineCount -gt 1 ]
+        then
+            log "[isParagraphThenSplitAndSave] : face a paragraph : detected continuous newlines : $newLineCount"
+
+            splitPrgh "$line"
+            newLineCount=0
+        fi
+    fi
+}
+
+getRules(){
+    # 읽은 뒤 쪼갤 때 newline단위로 줄을 구분해야 한다.
+    priorIFS=$IFS
+    IFS=$'\n'
+
+    initializeReading
+
+    while read -r line || [ -n "$line" ]; do
+        log "[getRules] read and acummulate : $line"
+
+        isParagraphThenSplitAndSave "$line"
+        
+        appendEachLineAndSave "$line"
+
+        
+    done < $file
+
+    # shell에서 마지막 줄을 읽지 않는다. 
+    # c 기준으로 텍스트는 개행문자로 끝이 나야 한다. 그게 아니면 에러를 발생시키고 마지막 while을 실행하지 않는다.
+    # https://stackoverflow.com/questions/12916352/shell-script-read-missing-last-line
+    # 그래서... 
+    completeLastLine
+    
+    logResultOption
+
     IFS=$priorIFS
 
 
 }
-
-
-getRules2(){
-    file='./rules.txt'
-    idx=1
-    while read line;
-    do
-        # echo $line
-        #check if this line is in rule, cont, or ans
-        # if [[ $line == ""]]
-        # then
-        #     line=" "
-        # fi
-        if [[ $line == *"rule"* ]]
-        then
-            # echo no line
-            r="RULE${idx} : ${line#"rule : "}"
-            ruleArr+=("$r")
-            rules+="$r\n\n\n\n"
-            idx=$(( idx + 1 ))
-        elif [[ $line == *"cont"* ]]
-        then
-            # echo no cont
-            contArr+=("${line#"cont : "}")
-        elif [[ $line == *"ans"* ]]
-        then
-            # echo no ans
-            ansArr+=("${line#"ans : "}")
-        elif [[ $line == *"limit"* ]]
-        then
-            limitArr+=("${line#"limit : "}")
-        fi
-
-        # echo
-
-
-
-    done < $file
-
-
-
-    
-
-}
-
-
-# getRules2(){
-#     file='./rules.txt'
-
-#     RAC=("rule" "cont" "ans")
-#     idxRule=1
-#     idxRAC=0
-#     # IFS=$'\n'
-#     while read line;
-#     do
-#         # echo
-#         if [ "$line" = "" ]
-#         then   
-#             line=" "
-#         fi
-#         case $idxRAC in
-
-#             0)  
-                
-#                 echo -e "----------\nrules added : ${RAC[${idxRAC}]^^}${idxRule} : $line"
-#                 # ruleArr+=("${RAC[${idxRAC}]^^}${idxRule} : $line")
-#                 # rules+="${RAC[${idxRAC}]^^}${idxRule} : $line\n\n\n\n"
-#                 ;;
-
-#             1)
-#                 echo -e "----------\ncont added : ${RAC[${idxRAC}]^^}${idxRule} : $line"
-
-#                 # contArr+=("${RAC[${idxRAC}]^^}${idxRule} : $line")
-#                 # contArr+=($line)
-#                 ;;
-
-#             2)
-#                 echo -e "----------\nans added : ${RAC[${idxRAC}]^^}${idxRule} : $line"
-
-#                 # ansArr+=("${RAC[${idxRAC}]^^}${idxRule} : $line")
-#                 # ansArr+=($line)
-#                 ;;
-#         esac
-#         idxRAC=$(( idxRAC + 1))
-#         if [ $idxRAC -gt 2 ]
-#         then
-#             idxRAC=0
-#         fi
-
-
-#         if [ "$line" = "" ]
-#         then   
-
-#             for (( i=idxRAC; i<3; i++ ))
-#             do
-#                 # echo -e "----------\n${RAC[${i}]^^} added : ${RAC[${i}]^^}${idxRule} :" ""
-#                 ruleArr+=("${RAC[${i}]^^}${idxRule} : $line")
-#                 # rules+="${RAC[${i}]^^}${idxRule} : $line\n\n\n\n"
-#             done
-#             idxRule=$(( idxRule + 1 ))
-#             idxRAC=0
-#         else
-#             # contArr+=("${RAC[${1}]^^}${idxRule} : $line")
-#             # ansArr+=("${RAC[${2}]^^}${idxRule} : $line")
-#             # name=${RAC[${idxRAC}]}
-#             # ${name}Arr
-#             # r=${name}Arr
-#             r=ruleArr
-#             # r=${RAC[$idxRAC]}Arr
-#             # echo ${r}
-#             ${!r}+=("$line")
-            
-#             # ${RAC[$idxRAC]}Arr+=("$line")
-        
-#             # echo -e "----------\n${RAC[${idxRAC}]^^} added : ${RAC[${idxRAC}]^^}${idxRule} : $line"
-#             idxRAC=$(( idxRAC + 1))
-        
-#             # echo -e "----------\nrules added : ${RAC[${idxRAC}]^^}${idxRule} : $line"
-#             # echo -e "----------\ncont added : ${RAC[${idxRAC}]^^}${idxRule} : $line"
-#             # echo -e "----------\nans added : ${RAC[${idxRAC}]^^}${idxRule} : $line"
-
-#             # ruleArr+=("${RAC[${0}]^^}${idxRule} : $line")
-#             # rules+="${RAC[${0}]^^}${idxRule} : $line\n\n\n\n"
-
-#             # contArr+=($line)
-
-#             # ansArr+=($line)
-
-
-#             # r=${RAC[0]}
-#             # echo ${r^^}
-#             # echo "${RAC[${idxRAC}]} ${idxRule} = ${RAC[${idxRAC}]^^}${idxRule} : $line"
-#             # echo "${RAC[${idxRAC}]^^}${idxRule} : $line"
-#             # ${!RAC}+="$line\n\n"
-#             # echo $line
-            
-
-
-
-
-#             # # contArr+=(${!c})
-
-#             # idxInside=$(( idxInside + 1 ))
-#         #     echo "$idxInside $line"
-#         fi
-#         # echo $line
-#     done < $file
-
-#     #print Arr
-#     # echo -e "\n\n\nprint all items"
-#     # for (( i=0; i<${#ruleArr[@]}; i++ ))
-#     # do
-        
-#     #     echo "rule${i} : ${ruleArr[$i]}"
-#     #     echo
-#     #     echo "cont${i} : ${contArr[$i]}"
-#     #     echo
-#     #     echo "ans${i} : ${ansArr[$i]}"
-#     #     # for (( j=0; j<${#RAC[@]}; j++ ))
-#     #     # do
-            
-#     #     #     # echo ${RAC[$j]}
-#     #     #     name=${RAC[$j]}
-#     #     #     # echo $name
-#     #     #     name=${name}Arr
-#     #     #     echo ${name}${i}
-#     #     #     echo ${!name[$i]}
-#     #     #     # echo
-#     #     #     # echo ${${!${RAC[$j]}Arr}[$i]}
-#     #     # done
-#     #     echo -----
-#     #     echo
-#     #     echo
-
-#     # done
-
-
-
-# }
-
 
 
 : << "INIT"
@@ -735,7 +728,7 @@ INIT
 
 init(){
     updateVerses
-    echo ${numV} verses exist.
+    log "[init] ${numV} verses exist."
 
     IFS=$'\n'
 
@@ -768,12 +761,17 @@ init(){
 open the gate with a dialog
 GATE
 
-    apple_dialog "Welcome Back to Code Repent Gradient!\n$warn"
+    apple_dialog_show "--------------------------------------------------------------
+Code Repent Gradient : 마음을 돌이켜 하나님에게로 돌아가자.
 
-    apple_dialog $rules
+Max glob arg_me U(G, me) s.t. U(me) <= U(G)
+--------------------------------------------------------------
+Welcome Back to Code Repent Gradient!\n$warn" "single"
+
+    apple_dialog_show $rules "single"
     while [ "$ans" = "No" ]
     do
-        apple_dialog "${warn}\n\n${rules}"
+        apple_dialog_show "${warn}\n\n${rules}" "single"
     done
 
 
@@ -785,12 +783,16 @@ REPEAT
     record "\n\n\n\n\n\n\n$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y) "
 
 
-    # echo "the number : ${#ruleArr[@]}"
+    log "[init] the number of rules : ${#ruleArr[@]}"
+    local i
     for (( i=0; i<${#ruleArr[@]}; i++ ))
     do
-        # echo -e "\n\n\nEnter Rule ${i}"
-        # echo -e "${ruleArr[${i}]}\n\n"
-        # echo "${contArr[${i}]}"
+
+
+
+        log "----------------------------------------\n[init] Enter Rule ${i}"
+        log "[init] rules : ${ruleArr[${i}]}\n\n"
+        log "[init] cont : ${contArr[${i}]}"
 
         # r=rule${i}
         # c=cont${i}
@@ -798,27 +800,152 @@ REPEAT
         # echo -e "${!r}\n${!c}"
         
         correctRes="${ansArr[$i]}"
-        # echo "correct response : $correctRes"
+        log "correct response : $correctRes"
         resStr="PLEASE TYPE <$correctRes>"
 
         contents="${ruleArr[${i}]}\n\n${contArr[${i}]}"
+ 
+        limit=${limitArr[$i]}
 
-        if [[ ${ansArr[$i]} != " " ]]
+
+        if [ $limit -gt 0 ]
+        then
+            contents+="\nPlease Type more than $limit letters."
+        fi  
+
+        if [[ $correctRes != " " ]]
         then
             contents+="\n$resStr"
         fi
-        # echo -e "$contents"
+        log "[init] contents : $contents\n----------------------------------------"
 
-        apple_text "$contents"
-        # echo $ans
-        # echo $msg
 
-        if [ ${limitArr[$i]} = " " ]
+        
+
+        if [ ${completeArr[$i]} = " " ]
         then
-            limit=0
-        else
-            limit=${limitArr[$i]}
+            backFlag=0
+            log "[init] current dialog pass stat : ------------------------false------------------------"
+            apple_dialog_text "$contents"
+            log "[init] parsed button from user : $ans"
+            log "[init] parsed answer from user : $msg"
+
+            if [ "$ans" = "Back" ]
+            then
+                log "[init] button stat------------------------pressBack------------------------"
+                i=$(( i-2 ))
+                if [ $i -lt 0 ]
+                then
+                    i=-1
+                fi
+                continue
+            fi
+
+            # if [ ${limitArr[$i]} = " " ]
+            # then
+            #     limit=0
+            # else
+            #     limit=${limitArr[$i]}
+            # fi        
+
+            while [ \( "$correctRes" != " " -a "${msg^^}" != "$correctRes" \) -o \( "$correctRes" = " " -a ${#msg} -lt ${limit} \) ]
+            # while [ "$ans" = "No" -o ${#msg} -lt ${limit} -o "$msg" != "$correctRes" ]
+            do
+                    alrt=""
+                    if [ "$correctRes" != " " -a "${msg^^}" != "$correctRes" ]
+                    then
+                        log "[init] while loop stat : 글자가 틀렸다."
+                        log "[init] while loop stat : 입력한 글자 : ${msg^^}"
+                        log "[init] while loop stat : 입력해야 하는 글자 : /$correctRes/"
+                        alrt="YOU ENTERED <$msg>\nPLEASE ENTER <$correctRes>.\n"
+
+                        # log "[init] while loop stat : false : $cond1"
+                    # fi
+                    elif [ "$correctRes" = " " -a ${#msg} -lt ${limit} ]
+                    then
+                        log "[init] while loop stat : 글자 수 미달"
+                        log "[init] while loop stat : ${#msg}"
+                        log "[init] while loop stat : ${limit}"
+                        log "[init] while loop stat : false : $cond2"
+                        alrt="YOU ENTERED <$msg>\nPLEASE ENTER MORE THAN $limit CHARS.\n"
+                    fi
+                    ans=""
+                    msg=""
+
+
+                    # alertUpdate $msg $limit
+                    apple_dialog_text "${alrt}${warn}${ruleArr[${i}]}\n\nType$correctRes"
+                    if [ "$ans" = "Back" ]
+                    then
+                        log "[init] button stat : ------------------------pressBack------------------------"
+                        i=$(( i-2 ))
+                        if [ $i -lt 0 ]
+                        then
+                            i=-1
+                        fi
+                        
+                        backFlag=1
+
+                        break
+                    fi
+            done
+
+            if [[ $backFlag == 0 ]]
+            then
+                completeArr[$i]="true"
+                log "[init] current dialog stat : ------------------------complete ${i}!------------------------"
+                log "[init] dialog stat update: ${completeArr[@]}"
+                msgArr[$i]=$msg
+            fi
+
+            # if [ -z $debug ]
+            # then
+            record $msg
+            # fi
+        else # if already submit answers to God.
+            log "[init] current dialog stat : ------------------------true : show mode------------------------"
+
+            contents+="\nAnswer : ${msgArr[$i]}"
+
+            if [ $i -eq 0 ]
+            then
+                apple_dialog_show "$contents" "single"
+            else
+                apple_dialog_show "$contents"
+            fi
+
+            if [ "$ans" = "Back" ]
+            then
+                log "[init] current button stat : ------------------------pressBack------------------------"
+                i=$(( i-2 ))
+                if [ $i -lt 0 ]
+                then
+                    i=-1
+                fi
+            else # when press Next
+                log "[init] current button stat : ------------------------pressNext------------------------"
+                continue
+            fi
+
         fi
+        
+<< "COMP"
+        for i = 1 to allArr.len
+            if comArr[i] = false # 여기 seg fault 안뜰까? ㅋㅋ
+                apple_dialog text contents
+
+                while ans = no or msg = false or msgLen < limit
+                    applie_dialog text contents
+
+                    if ans = back
+                        i--
+                        break
+        else
+            aple_dialog show contents
+COMP
+        
+
+
 
 
 << "PSEUDO"
@@ -842,36 +969,7 @@ PSEUDO
     # cond1="$correctRes" != " " -a "${msg^^}" != "$correctRes"
     # cond2="$correctRes" = " " -a ${#msg} -lt ${limit}
 
-    while [ "$ans" = "No" -o \( "$correctRes" != " " -a "${msg^^}" != "$correctRes" \) -o \( "$correctRes" = " " -a ${#msg} -lt ${limit} \) ]
-        # while [ "$ans" = "No" -o ${#msg} -lt ${limit} -o "$msg" != "${ansArr[$i]}" ]
-        do
-            alrt=""
-            if [ "$correctRes" != " " -a "${msg^^}" != "$correctRes" ]
-            then
-                # echo "글자가 틀렸다."
-                # echo "입력한 글자 : ${msg^^}"
-                # echo "입력해야 하는 글자 : /$correctRes/"
-                alrt="YOU ENTERED <$msg>\nPLEASE ENTER <$correctRes>.\n"
 
-            #     echo "false : $cond1"
-            # fi
-            elif [ "$correctRes" = " " -a ${#msg} -lt ${limit} ]
-            then
-                # echo "글자 수 미달"
-                # echo ${#msg}
-                # echo ${limit}
-            #     echo "false : $cond2"
-                alrt="YOU ENTERED <$msg>\nPLEASE ENTER MORE THAN $limit CHARS.\n"
-            fi
-            ans=""
-            msg=""
-
-
-            # alertUpdate $msg $limit
-            apple_text "${alrt}${warn}${ruleArr[${i}]}\n\nType${ansArr[$i]}"
-        done
-
-        record $msg
     done
 
 
@@ -891,8 +989,6 @@ PSEUDO
 
 WAIT
 wait(){
-
-
     # baseMin=2
     # base=$(( $baseMin * 60 ))
     # var=$(( base / 4 ))
@@ -974,3 +1070,4 @@ wait(){
 
 
 # LANG=ko_KR
+# export LANG

@@ -33,9 +33,9 @@ curFile=$0
 if [[ $curFile = *"_up"* ]]
 then
     echo "This is in dev!"
-    source function_up.sh
+    source /Users/baek/project/bashProjects/codeRepentGradient/testing/function_up.sh
 else
-    source function.sh
+    source /Users/baek/project/bashProjects/codeRepentGradient/stable/function.sh
 fi
 
 

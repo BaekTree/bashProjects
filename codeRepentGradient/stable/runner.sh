@@ -4,11 +4,12 @@ baseMinArg=$1
 if [ -z $baseMinArg ]
 then
 	baseMin=60
+else
+    baseMin=$baseMinArg
 fi
 
 while [ 1 ]
 do
-    baseMin=$baseMinArg
     base=$(( $baseMin * 60 ))
     var=$(( base / 4 ))
     # variance test
