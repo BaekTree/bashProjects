@@ -848,11 +848,11 @@ REPEAT
             #     limit=${limitArr[$i]}
             # fi        
 
-            while [ \( "$correctRes" != " " -a "${msg^^}" != "$correctRes" \) -o \( "$correctRes" = " " -a ${#msg} -lt ${limit} \) ]
+            while [ \( "$correctRes" != " " -a "${msg^^}" != "${correctRes^^}" \) -o \( "$correctRes" = " " -a ${#msg} -lt ${limit} \) ]
             # while [ "$ans" = "No" -o ${#msg} -lt ${limit} -o "$msg" != "$correctRes" ]
             do
                     alrt=""
-                    if [ "$correctRes" != " " -a "${msg^^}" != "$correctRes" ]
+                    if [ "$correctRes" != " " -a "${msg^^}" != "${correctRes^^}" ]
                     then
                         log "[init] while loop stat : 글자가 틀렸다."
                         log "[init] while loop stat : 입력한 글자 : ${msg^^}"

@@ -7,14 +7,13 @@ source dir.sh
 
 args=($@)
 
-arg_sec=${args[0]}
 # debug=${args[1]}
 # dFunc=${args[2]} # debug로 실행할 함수 : getRules만 지원
 # arg_file=${args[3]} # 읽을 rules 파일
 # dFile=${args[4]}
 
 printUsage(){
-    echo -e "usage : ./timer_up.sh <seconds>. without argument, default is 5 secs."
+    echo -e "usage : ./main.sh"
     echo -e "option : \n\t -d\n\t -f\n\t -l"
     echo -e "option -d : "
     echo -e "\t -d getRules : run only getRules function."
@@ -27,10 +26,7 @@ printUsage(){
 
 for (( t_arg_i=0; t_arg_i < ${#args[@]}; t_arg_i++ ))
 do
-
-    if [[ ${args[$t_arg_i]} =~ ^[0-9]*$ ]]; then 
-        arg_sec=${args[$t_arg_i]}
-    elif [[ ${args[$t_arg_i]} = "-d" ]] || [ ${args[$t_arg_i]} = "-df" ]
+if [[ ${args[$t_arg_i]} = "-d" ]] || [ ${args[$t_arg_i]} = "-df" ]
     then
         debug=${args[$t_arg_i]}
         tmp_i=$(( $t_arg_i + 1 ))
@@ -52,10 +48,6 @@ do
     fi
 done
 
-if [ -z $arg_sec ]
-then
-    arg_sec=5
-fi
 
 
 
@@ -74,24 +66,7 @@ echo -e "\n\n\n\n$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y
 
 
 << "DEBUG"
-    테스트케이스
-    -d을 누른다.
-        clear, wait, hide을 실행하지 않는다.
-    그 뒤로 아무것도 명시하지 않으면 그대로 진행.
-    만약에 파일이름을 추가로 명시했다면 해당 파일을 연다. 찾을 수 없으면 에러를 내고 종료.
-    만약에 함수이름을 명시했다면 해당 함수만 실행. 틀린 것을 넣으면 에어를 내고 종료.
 
-    파일이름 없이 함수이름을 넣었다면? 
-        그럼 파일 이름으로 받은 argument가 함수 이름인지 확인해야 한다... 그냥 둘
-
-
-    getRules만 명시했다.
-        기본 함수들을 실행하지 않고 getRules만 실행한다. init도 실행하지 않는다.
-    명시가 없다.
-        기본함수만 실행하지 않고 모두 실행
-
-    d을 누르지 않는다.
-    모든 함수를 다 실행
 DEBUG
 
 
@@ -115,7 +90,6 @@ fi
 if [ -z $debug ] # debug 아닐 때. 모두 실행
 then
     clear
-    wait $arg_sec
     hideAll
     getRules
     init
