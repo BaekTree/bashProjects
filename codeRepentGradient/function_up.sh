@@ -7,6 +7,9 @@ declare -a msgArr=()
 
 source dir.sh
 
+source ./imageFunc.sh
+
+
 allArr=( ruleArr contArr ansArr limitArr completeArr)
 lenAllArr=${#allArr[@]}
 
@@ -20,37 +23,6 @@ log(){
     fi
 }
 
-updateVerses(){
-    curDir=$(pwd)
-    log "[updateVerses] : move to bible dir"
-    cd "$IMG_DIR"
-    log "[updateVerses] : pwd: $(pwd)"
-
-    v=$(ls)
-    vArr=($v)
-
-    numV=${#vArr[@]}
-
-    log "[updateVerses] : back to cur dir : $curDir"
-    cd ${curDir}
-}
-
-genVerseIDx(){
-    idxV=$(( $RANDOM % ${#vArr[@]} ))
-}
-
-viewVerse(){
-    # closeVerse
-
-    genVerseIDx
-    log "[viewVerse] opening ${vArr[${idxV}]}"
-    open -a Preview "$IMG_DIR/${vArr[${idxV}]}";
-    # $(sleep 10 || log 10 passed!) &
-    osascript -e "tell application \"Preview\"
-	set bounds of front window to {768, 0, 1536, 960}
-    end tell"
-
-}
 
 hideAll(){
     osascript -e "tell application \"Finder\"
@@ -59,18 +31,6 @@ hideAll(){
     end tell"
 }
 
-closeVerse(){
-    pids=$(pgrep Preview)   
-    if [ -z $pids ]
-    then
-        log "[closeVerse] : no pids"
-    else
-        log "[closeVerse] : preview pids : ${pids}"
-        log "[closeVerse] : killing preview $pids"
-        kill -9 ${pids}
-        sleep 0.5
-    fi
-}
 
 
 apple_dialog(){
@@ -92,16 +52,16 @@ apple_dialog(){
 apple_dialog_text(){
     log "[apple_dialog_text input]----------------------------------------:\n$1\n----------------------------------------\n"
     res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Submit To God\", \"Back\"} default answer \"\" default button \"Submit To God\"")
-    # closeVerse;
+    # closePreview;
     parseBtnAns $res
     parseTxt $res
-    viewVerse &
+    showImg &
 
 }
 
 
 apple_dialog_show(){
-    # closeVerse
+    # closePreview
     local shw_arg=$2
     # local shw_i
     local btn_txt
@@ -120,7 +80,7 @@ apple_dialog_show(){
     res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt")
 
     parseBtnAns $res
-    viewVerse &
+    showImg &
 }
 
 
@@ -758,7 +718,7 @@ INIT
 
 
 init(){
-    updateVerses
+    updateImgList
     log "[init] ${numV} verses exist."
 
     IFS=$'\n'
@@ -1011,7 +971,7 @@ PSEUDO
 
     # record "ARE YOU OBSESSED? ${msg}"
 
-    closeVerse
+    closePreview
 
 }
 
