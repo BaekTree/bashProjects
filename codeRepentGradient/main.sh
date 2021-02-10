@@ -56,10 +56,10 @@ if [[ $scrpt_name = *"_up"* ]] || [[ $scrpt_name = *"main.sh"* ]]
 then
     echo "This is in dev!"
     source $DIR/function_up.sh
-    file="$DATA_DIR/rules_up.txt"
+    file="$DATA_DIR/rules_up_only_kor.txt"
 else
     source $DIR/stable/function.sh
-    file="$DATA_DIR/rules.txt"
+    file="$DATA_DIR/rules_up_only_kor.txt"
 fi
 
 echo -e "\n\n\n\n$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y)" 

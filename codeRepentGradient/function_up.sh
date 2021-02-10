@@ -1,9 +1,12 @@
+# export LANG="ko_KR.UTF-8" #없으면 간혹 sed: RE error: illegal byte sequence 무한반복?
+
 declare -a ruleArr=()
 declare -a contArr=()
 declare -a ansArr=()
 declare -a limitArr=()
 declare -a completeArr=()
 declare -a msgArr=()
+declare -a ruleIdxArr=()
 
 source dir.sh
 
@@ -165,6 +168,7 @@ printArrs(){
     echo size of ansArr : ${#ansArr[@]}
     echo size of limitArr : ${#limitArr[@]}
     echo size of completeArr : ${#completeArr[@]}
+    echo ruleIdxArr : "${ruleIdxArr[*]}"
     
     echo 
     echo $(date)
@@ -225,20 +229,21 @@ cleanseStrAndStore(){
     # local refArr="$2"
     if [[ ! -z $str ]]
     then
-    #     # {
-    #         # echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' >> /dev/null
-    #     # } || {
-    #     #     echo "iconv fail"
-    #     #     echo "$str"
-    #     # }
-    #     # str=$(echo "$str" | sed -e 's/\n$//')
+    # #     # {
+    # #         # echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' >> /dev/null
+    # #     # } || {
+    # #     #     echo "iconv fail"
+    # #     #     echo "$str"
+    # #     # }
 
-    #     # https://stackoverflow.com/questions/11287564/getting-sed-error-illegal-byte-sequence-in-bash
-    #     # str=$(echo -e "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba') # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
-        str=$(echo -e "$str" | sed -e 's/ $//') # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+    # #     # https://stackoverflow.com/questions/11287564/getting-sed-error-illegal-byte-sequence-in-bash
+        str=$(echo -e "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' 2>/dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+        str=$(echo -e "$str" | sed -e 's/ *$//' 2>/dev/null)
+    #     # str=$(echo -e "$str" | sed -e 's/ $//' 2> /dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+        # str="${str%%" "}"
 
 
-    #     # str=$(LC_CTYPE=C echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba') # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+    # #     # str=$(LC_CTYPE=C echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba') # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
     
     fi
     # str=${str%% *}
@@ -258,6 +263,8 @@ splitLargeStrAndStore(){
         # 구원자!!
         # https://forum.ubuntu-kr.org/viewtopic.php?t=25616
         frontSeg="$(echo $str | cut -b -$SPLIT_BASE_LEN | iconv 2>/dev/null)"
+        # frontSeg="$(echo $str | cut -b -$SPLIT_BASE_LEN)"
+
         # frontSeg="${str:0:$SPLIT_BASE_LEN}"
         log "[frontSeg] : |$frontSeg|"
         endSeg="${str#"$frontSeg"}"
@@ -284,6 +291,8 @@ splitLargeStrAndStore(){
         fillMissingArrayFromTo $(( curReadStage+1 )) $lenAllArr
         last_rule=${ruleArr[-1]}
         ruleArr+=($last_rule)
+
+
 
         str="$endSeg"
     done
@@ -502,6 +511,9 @@ configLineAndInitNewStage(){
         #지금 rule이 막 시작했으므로 초기화
         line_ref="RULE ${ruleNum} : $line_ref"
         ruleNum=$(( ruleNum + 1 ))
+
+        # echo ${#ruleArr[@]}
+        ruleIdxArr+=($((${#ruleArr[@]})))
 
     else
         if [[ $line_ref == *"cont : "* ]]
@@ -775,28 +787,75 @@ REPEAT
 
 
     log "[init] the number of rules : ${#ruleArr[@]}"
+    
+    
+    local -a ruleArrR=()
+    local -a contArrR=()
+    local -a ansArrR=()
+    local -a limitArrR=()
+    local -a completeArrR=()
+    local -a msgArrR=()
+    {
+            # local randRuleIdx=$(( $RANDOM % $ruleNum ))
+            # local i = ${ruleIdxArr[$randRuleIdx]}
+
+        local -a handler=(0 1 2)
+        local handle_i=0
+        
+        while [[ $handle_i < 3 ]]
+        do
+            local randRuleIdx=$(( $RANDOM % $(($ruleNum - 3)) ))
+            # echo $randRuleIdx
+            handler+=($(($randRuleIdx + 3)))
+            
+
+            # echo $idx
+            handle_i=$(( handle_i + 1 ))
+        done
+
+        for (( handle_i=0; handle_i<${#handler[@]}; handle_i++ ))
+        do
+            local randRuleIdx=${handler[$handle_i]}
+            local start_idx=${ruleIdxArr[$randRuleIdx]}
+            local end_idx=${ruleIdxArr[$(($randRuleIdx+1))]}
+            local range=$(( $end_idx - $start_idx ))
+
+            for (( i=$start_idx; i<$end_idx; i++ ))
+            do
+                # echo -e "${ruleArrR[$i]}"
+                ruleArrR+=("${ruleArr[$i]}")
+                contArrR+=("${contArr[$i]}")
+                ansArrR+=("${ansArr[$i]}")
+                limitArrR+=("${limitArr[$i]}")
+                completeArrR+=("${completeArr[$i]}")
+                msgArrR+=("${msgArr[$i]}")
+            done
+        done
+    }
+
+
     local i
-    for (( i=0; i<${#ruleArr[@]}; i++ ))
+    for (( i=0; i<${#ruleArrR[@]}; i++ ))
     do
 
 
 
         log "----------------------------------------\n[init] Enter Rule ${i}"
-        log "[init] rules : ${ruleArr[${i}]}\n\n"
-        log "[init] cont : ${contArr[${i}]}"
+        log "[init] rules : ${ruleArrR[${i}]}\n\n"
+        log "[init] cont : ${contArrR[${i}]}"
 
         # r=rule${i}
         # c=cont${i}
         # echo "################################${r} ${c}"
         # echo -e "${!r}\n${!c}"
         
-        correctRes="${ansArr[$i]}"
+        correctRes="${ansArrR[$i]}"
         log "correct response : $correctRes"
         resStr="PLEASE TYPE <$correctRes>"
 
-        contents="${ruleArr[${i}]}\n\n${contArr[${i}]}"
+        contents="${ruleArrR[${i}]}\n\n${contArrR[${i}]}"
  
-        limit=${limitArr[$i]}
+        limit=${limitArrR[$i]}
 
 
         if [ $limit -gt 0 ]
@@ -813,7 +872,7 @@ REPEAT
 
         
 
-        if [ ${completeArr[$i]} = " " ]
+        if [ ${completeArrR[$i]} = " " ]
         then
             backFlag=0
             log "[init] current dialog pass stat : ------------------------false------------------------"
@@ -832,11 +891,11 @@ REPEAT
                 continue
             fi
 
-            # if [ ${limitArr[$i]} = " " ]
+            # if [ ${limitArrR[$i]} = " " ]
             # then
             #     limit=0
             # else
-            #     limit=${limitArr[$i]}
+            #     limit=${limitArrR[$i]}
             # fi        
 
             while [ \( "$correctRes" != " " -a "${msg^^}" != "${correctRes^^}" \) -o \( "$correctRes" = " " -a ${#msg} -lt ${limit} \) ]
@@ -865,7 +924,7 @@ REPEAT
 
 
                     # alertUpdate $msg $limit
-                    apple_dialog_text "${alrt}${warn}${ruleArr[${i}]}\n\nType$correctRes"
+                    apple_dialog_text "${alrt}${warn}${ruleArrR[${i}]}\n\nType$correctRes"
                     if [ "$ans" = "Back" ]
                     then
                         log "[init] button stat : ------------------------pressBack------------------------"
@@ -883,10 +942,10 @@ REPEAT
 
             if [[ $backFlag == 0 ]]
             then
-                completeArr[$i]="true"
+                completeArrR[$i]="true"
                 log "[init] current dialog stat : ------------------------complete ${i}!------------------------"
-                log "[init] dialog stat update: ${completeArr[@]}"
-                msgArr[$i]=$msg
+                log "[init] dialog stat update: ${completeArrR[@]}"
+                msgArrR[$i]=$msg
             fi
 
             # if [ -z $debug ]
@@ -896,7 +955,7 @@ REPEAT
         else # if already submit answers to God.
             log "[init] current dialog stat : ------------------------true : show mode------------------------"
 
-            contents+="\nAnswer : ${msgArr[$i]}"
+            contents+="\nAnswer : ${msgArrR[$i]}"
 
             if [ $i -eq 0 ]
             then
