@@ -1,4 +1,5 @@
 source ./log.sh
+export LANG="ko_KR.UTF-8" #없으면 간혹 sed: RE error: illegal byte sequence 무한반복?
 
 SPLIT_BASE_LEN=1000
 
@@ -133,8 +134,8 @@ splitLargeStrAndStore(){
         log "[target] : |$str|"
         # 구원자!!
         # https://forum.ubuntu-kr.org/viewtopic.php?t=25616
-        frontSeg="$(echo $str | cut -b -$SPLIT_BASE_LEN | iconv 2>/dev/null)"
-        # frontSeg="$(echo $str | cut -b -$SPLIT_BASE_LEN)"
+        # frontSeg="$(echo $str | cut -b -$SPLIT_BASE_LEN | iconv 2>/dev/null)"
+        frontSeg="$(echo $str | cut -b -$SPLIT_BASE_LEN)"
 
         # frontSeg="${str:0:$SPLIT_BASE_LEN}"
         log "[frontSeg] : |$frontSeg|"
@@ -160,8 +161,9 @@ splitLargeStrAndStore(){
         local curReadStage="$(getCurReadStage)"
 
         fillMissingArrayFromTo $(( curReadStage+1 )) $lenAllArr
-        last_rule=${ruleArr[-1]}
-        ruleArr+=($last_rule)
+
+        copyRuleForNextPrgp
+
 
 
 
@@ -197,13 +199,13 @@ saveStrCollectionToCurStageArr(){
     # echo "$str"
     # echo "${#str}"
 
-    if isLargeStr "$str";
+if isLargeStr "$str";
     then
-        # echo $(( ${#str} / $SPLIT_BASE_LEN ))
+#         # echo $(( ${#str} / $SPLIT_BASE_LEN ))
         splitLargeStrAndStore "$str" "$curArr"
-    else
-        cleanseStrAndStore "$str" "$curArr"
-    fi
+else
+    cleanseStrAndStore "$str" "$curArr"
+fi
 
     # str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
     # # str=${str%% *}
@@ -416,7 +418,7 @@ configLineAndInitNewStage(){
 
 }
 
-finishOneStage(){
+saveStrCollectionAndFinishOneStage(){
     local strCollection="$(getStrCollection)"
     if isValidLine "$strCollection";#invalid when first line of txt. strCollection contains nothing, so empty string is put to ruleArr.
     then
@@ -439,7 +441,15 @@ appendCurLineToStrCollection(){
     # sed을 사용 : s/*\n$//이 잘 안된다. sed는 개행을 기준으로 해서. 그래서... sed를 더 깊게... ba 사용.
     log "[appendCurLineToStrCollection] : running append"
 
+    local strClt="$(getStrCollection)"
 
+    local lenStrClt=${#strClt}
+    local lenLine=${#line}
+
+    if [[ $(( $lenStrClt + $lenLine )) > 500 ]]
+    then
+        save
+    fi
 
     #방금 읽은 줄을 priorAppendStr에 누적해서 추가!
     appendStrCollection "$line\n"
@@ -487,27 +497,23 @@ completeLastLine(){
 copyRuleForNextPrgp(){
 
         last_rule=${ruleArr[-1]}
-        
-        ## 만약 여러 개행으로 하나의 rule+cont+ans+limit이 끝난다면? 그대로 이어서는 안된다. 새로 추가하도록 내버려 둬야 한다.
-        if [[ $line != *"rule : "* ]]
-        then
-            ruleArr+=($last_rule)
-        fi
+        ruleArr+=($last_rule)
 }
 
 
 
 savePrghAndClearStrCollection(){
     
-    local line="$1"
-    if ! isLineTransToNextStage "line";
-    then
+    # local line="$1"
+    # if ! isLineTransToNextStage "line";
+    # then
         log "[savePrghAndClearStrCollection] : not transition to new arr."
-        finishOneStage
+        saveStrCollectionAndFinishOneStage
         copyRuleForNextPrgp
+        
         local curReadStage="$(getCurReadStage)"
         fillMissingArrayFromTo $(( curReadStage+1 )) $lenAllArr
-    fi
+    # fi
     # else, just move the next stage!
     # 새로운 단락을 판단하는 기준은 여러 줄의 개행이 연속되어 나오다가 개행이 아닌 줄을 만났을 때이다.
     # 새로 만난 줄이 새로운 단계라면 그냥 그대로 새로운 단계를 시작하면 된다.
@@ -546,14 +552,25 @@ isLineParagraph(){
         then
             NEW_LINE_COUNT=0
             return 1
-        elif [ $NEW_LINE_COUNT -gt 1 ] # 연속된 개행이 쌓이다가 개행이 아닌 줄을 만났을 때
+        elif [[ $NEW_LINE_COUNT -gt 1 ]] &&  ! isLineTransToNextStage "line"; # 연속된 개행이 쌓이다가 개행이 아닌 줄을 만났을 때
         then
-            log "[isLineParagraph] : face a paragraph : detected continuous newlines : $NEW_LINE_COUNT"
+            echo "para"
+            log "[isLineParagraph] : face a paragraph : detected continuous newlines : $NEW_LINE_COUNT and next line is not new stage" 
             NEW_LINE_COUNT=0
             return 0
-        else # multiple continuous newlines : middle of checking paragraph
-            return 1
+        # else # multiple continuous newlines : middle of checking paragraph
+            # return 1
+        # elif ! isLineTransToNextStage "line";
+        # then
+            # return 0 # 새 줄을 만났는데 기존의 stage이면 문단이다.
+        else # 연속되지도 않은 그냥 일반적인 줄.
+            NEW_LINE_COUNT=0
+
+            return 1 # 새 줄이 새로운 stage이다. 그러면 여러 개행전에 모은게 문단 구분이 아니다. 
+            # 이것들은 기본적인 방식 : "새 stage을 만나면 저장한다"으로 처리.
         fi
+
+
     fi
 }
 saveStrCollectionAndStartNewStage(){
@@ -562,7 +579,7 @@ saveStrCollectionAndStartNewStage(){
     # 그 arr에 현재까지 내용을 넣는다.
     log "[saveStrCollectionAndStartNewStage] : face new stage : pause : line until flush the strCollection"
     
-    finishOneStage
+    saveStrCollectionAndFinishOneStage
 
     updateNextCurReadStage
     configLineAndInitNewStage "line"
@@ -578,7 +595,7 @@ getRules(){
     # c 기준으로 텍스트는 개행문자로 끝이 나야 한다. 그게 아니면 에러를 발생시키고 마지막 while을 실행하지 않는다.
     # https://stackoverflow.com/questions/12916352/shell-script-read-missing-last-line
     # 보장하기 위해서 마지막 줄을 읽는 명령어를 추가.
-    while read -r line || [ -n "$line" ]; do
+    while read -rn500 line || [ -n "$line" ]; do
 
     # while read -r line
     # do
@@ -586,18 +603,21 @@ getRules(){
         log "[getRules] read and acummulate : $line"
         if isLineParagraph "$line";
         then
-            savePrghAndClearStrCollection "$line"
+            savePrghAndClearStrCollection
         fi
-        
+
+        if isLineTransToNextStage "line";
+        then    
+           saveStrCollectionAndStartNewStage
+        fi
+
         if isMeetContinuousNewline;
         then
             continue
         fi
         
-        if isLineTransToNextStage "line";
-        then    
-           saveStrCollectionAndStartNewStage
-        fi
+
+
         
         appendCurLineToStrCollection "$line"
 
@@ -608,7 +628,7 @@ getRules(){
     # 따라서 명시적으로 다시 저장해주어야 한다.
     completeLastLine
     
-    logResultOption
+    # logResultOption
 
     IFS=$priorIFS
 
