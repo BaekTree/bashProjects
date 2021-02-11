@@ -68,34 +68,32 @@ parseArg "$scrpt_name" "${args[@]}"
 
 
 
-if [[ $scrpt_name = *"_up"* ]] || [[ $scrpt_name = *"main.sh"* ]]
-then
-    echo "This is in dev!"
-    source $DIR/function_up.sh
-    file="$DATA_DIR/rules_up_only_kor.txt"
-else
-    source $DIR/stable/function.sh
-    file="$DATA_DIR/rules_up_only_kor.txt"
-fi
+# if [[ $scrpt_name = *"_up"* ]] || [[ $scrpt_name = *"main.sh"* ]]
+# then
+    # echo "This is in dev!"
+source $DIR/function_up.sh
+    # file="$DATA_DIR/rules_up_only_kor.txt"
+# else
+    # source $DIR/stable/function.sh
+    # file="$DATA_DIR/rules_up_only_kor.txt"
+# fi
 
 
-if [ ! -z $arg_file ]
+
+if [ $arg_file = "-f" -a ! -z $dFile ]
 then
-    if [ $arg_file = "-f" -a ! -z $dFile ]
+    dir_chk=$(ls $DATA_DIR/$dFile)
+    if [ "$dir_chk" != "$DATA_DIR/$dFile" ]
     then
-        dir_chk=$(ls $DATA_DIR/$dFile)
-        if [ "$dir_chk" != "$DATA_DIR/$dFile" ]
-        then
-            echo -e "no file exists named $DATA_DIR/$dFile" 
-            exit 0
-        fi
-        file="$DATA_DIR/$dFile"
-    else
-        printUsage
+        echo -e "no file exists named $DATA_DIR/$dFile" 
         exit 0
     fi
-    
+    file="$DATA_DIR/$dFile"
+else
+    printUsage
+    exit 0
 fi
+    
 
 declare -a ruleArr=()
 declare -a contArr=()
@@ -114,9 +112,9 @@ source ./getValuesFunc.sh
 echo -e "$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y)" 
 if [ -z $debug ] # debug 아닐 때. 모두 실행
 then
-    clear
     hideAll
     getRules
+    clear
     startValueReminder
 else # debug 일때
     echo "|----------------------------------------------------------------------------------------------------------------------|"
