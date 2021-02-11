@@ -1,36 +1,35 @@
 #! /bin/bash
-baseMinArg=$1
-if [ -z $baseMinArg ]
+
+
+
+
+
+baseSecArg=$1
+if [ -z $baseSecArg ]
 then
-	baseMin=60
-elif [[ ! $baseMinArg =~ ^[0-9]*$ ]]; then 
+	baseSec=4500
+elif [[ ! $baseSecArg =~ ^[0-9]*$ ]]; then 
     echo -e "usage : iterator_up.sh <minutes>\n\tminutes here is the base minutes. \n\tThe shell adds random minutes 1/4 of the base minutes"
     exit 0
 else
-    baseMin=$baseMinArg
+    baseSec=$baseSecArg
 fi
 
 while [ 1 ]
 do
-    # baseMin=60
-    base=$(( $baseMin * 60 ))
-    var=$(( base / 4 ))
-    # variance test
-    limitT=$(( $base + $(( $RANDOM % $var )) )) 
-    #echo $limitT
+    var=$(( baseSec / 4 ))
+    if [[ $var == 0 ]]
+    then
+        var=1
+    fi
 
-    # baseMin=2
-    # base=$(( $baseMin * 60 ))
-    # var=$(( base / 4 ))
     # variance test
-    # limitT=$1
+    limitT=$(( $baseSec + $(( $RANDOM % $var )) )) 
 
-    # baseMin=61
-    # limitT=$(( $baseMin * 60 ))
     echo "wait ${limitT} seconds"
 
     mins=$(( $limitT / 60 ))
-    # echo $mins
+
     hours=$(( $mins / 60 ))
 
     mins=$(( $mins - $hours * 60 ))
@@ -54,7 +53,6 @@ do
         done
 
         limitT=$(( $fewHours * 3600 ))
-        # echo "checkout limitT=$limitT"
     fi
 
     #MINUTES
@@ -62,7 +60,6 @@ do
 
     for (( i=0; i<${#arr[@]}; i++ ))
     do
-        # echo i=$i
         if [ $limitT -gt $(( ${arr[$i]} * 60 )) ]
         then
             leftOver=$(( $limitT - $(( ${arr[$i]} * 60 )) ))
@@ -72,11 +69,9 @@ do
             (osascript -e "display notification \"${arr[$i]} mins left\" with title \"Code Repent Gradient\" subtitle \"glob arg max U s.t. U(G)\" sound name \"Frog\"")
 
             limitT=$(( $limitT - $leftOver ))
-            # echo "update limitT : $limitT"
         fi
     done  
 
-    # echo "checkout limitT=$limitT"
 
 
     #SECONDS
@@ -91,8 +86,8 @@ do
             limitT=$(( $limitT - $leftOver ))
         fi
     done   
+    # ./main.sh -l -f test_short.txt;   
+    ./main.sh -f rules_up_only_kor.txt;   
 
-
-    ./main.sh $limitT -l -d all -f rules_up_only_kor.txt;   
     echo one is done!
 done

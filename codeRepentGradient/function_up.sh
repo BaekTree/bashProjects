@@ -163,12 +163,12 @@ printArrs(){
         #     # echo ${${!${RAC[$j]}Arr}[$i]}
         # done
     done
-    echo size of ruleArr : ${#ruleArr[@]}
-    echo size of contArr : ${#contArr[@]}
-    echo size of ansArr : ${#ansArr[@]}
-    echo size of limitArr : ${#limitArr[@]}
-    echo size of completeArr : ${#completeArr[@]}
-    echo ruleIdxArr : "${ruleIdxArr[*]}"
+    echo "size of ruleArr : ${#ruleArr[@]}"
+    echo "size of contArr : ${#contArr[@]}"
+    echo "size of ansArr : ${#ansArr[@]}"
+    echo "size of limitArr : ${#limitArr[@]}"
+    echo "size of completeArr : ${#completeArr[@]}"
+    echo "size of ruleIdxArr : number of unique rules : "${#ruleIdxArr[@]}""
     
     echo 
     echo $(date)
@@ -409,7 +409,7 @@ setCurReadArrIdx(){
     CUR_READ_ARR_IDX=$idx
 }
 
-initializeReading(){
+initializeReadVars(){
     assignEachcurStagecurStageArrIdx
     
     ruleNum=1
@@ -692,11 +692,15 @@ getRules(){
     priorIFS=$IFS
     IFS=$'\n'
 
-    initializeReading
-    while read -r line
-    do
+    initializeReadVars
+    # c 기준으로 텍스트는 개행문자로 끝이 나야 한다. 그게 아니면 에러를 발생시키고 마지막 while을 실행하지 않는다.
+    # https://stackoverflow.com/questions/12916352/shell-script-read-missing-last-line
+    # 보장하기 위해서 마지막 줄을 읽는 명령어를 추가.
+    while read -r line || [ -n "$line" ]; do
 
-    # while read -r line || [ -n "$line" ]; do
+    # while read -r line
+    # do
+
         log "[getRules] read and acummulate : $line"
         isParagraphThenSplitAndSave "$line"
         
@@ -710,10 +714,8 @@ getRules(){
         
     done < $file
 
-    # shell에서 마지막 줄을 읽지 않는다. 
-    # c 기준으로 텍스트는 개행문자로 끝이 나야 한다. 그게 아니면 에러를 발생시키고 마지막 while을 실행하지 않는다.
-    # https://stackoverflow.com/questions/12916352/shell-script-read-missing-last-line
-    # 그래서... 
+    # 다음 stage arr을 만났을 때야 저장한다. 마지막 줄은 다른 stage arr을 만나지 않고 끝난다. 
+    # 따라서 명시적으로 다시 저장해주어야 한다.
     completeLastLine
     
     logResultOption
