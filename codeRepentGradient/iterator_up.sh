@@ -17,6 +17,8 @@ fi
 
 while [ 1 ]
 do
+    echo -e "$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y)" 
+
     var=$(( baseSec / 4 ))
     if [[ $var == 0 ]]
     then
@@ -89,5 +91,5 @@ do
     # ./main.sh -l -f test_short.txt;   
     ./main.sh -f rules_up_only_kor.txt;   
 
-    echo one is done!
+    echo -e "one is done!\n\n"
 done

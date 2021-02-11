@@ -10,7 +10,6 @@ source ./imageFunc.sh
 
 
 
-SPLIT_BASE_LEN=1000
 
 
 log(){
@@ -439,8 +438,9 @@ PSEUDO
 
     # record "ARE YOU OBSESSED? ${msg}"
 
-    closePreview
-    closePreview
+    local pids=$(pgrep Preview)
+
+    closePreview $pids
     
 
 }
