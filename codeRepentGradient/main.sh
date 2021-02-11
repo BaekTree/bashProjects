@@ -3,7 +3,6 @@
 # # exit when any command fails
 # set -e
 
-echo -e "\n\n\n\n$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y)" 
 
 source dir.sh
 printUsage(){
@@ -12,7 +11,7 @@ printUsage(){
     echo "option : \n\t -d\n\t -f\n\t -l"
     echo "option -d : "
     echo "\t -d getRules : run only getRules function."
-    echo "\t -d all : run getRules and init, but not call hideAll and wait functions."
+    echo "\t -d all : run getRules and startValueReminder, but not call hideAll and wait functions."
     echo "option -df : erase all limit and ans "
     echo "option -f : "
     echo "\t -f rules.txt : specific file data in data directory."
@@ -98,23 +97,39 @@ then
     
 fi
 
+declare -a ruleArr=()
+declare -a contArr=()
+declare -a ansArr=()
+declare -a limitArr=()
+declare -a completeArr=()
+declare -a msgArr=()
+declare -a uniqueRuleIdxArr=()
+
+allArr=( ruleArr contArr ansArr limitArr completeArr)
+lenAllArr=${#allArr[@]}
+
+source ./getValuesFunc.sh
+
+
+echo -e "$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y)" 
 if [ -z $debug ] # debug 아닐 때. 모두 실행
 then
     clear
     hideAll
     getRules
-    init
+    startValueReminder
 else # debug 일때
     echo "|----------------------------------------------------------------------------------------------------------------------|"
     echo "|                                                                                                                      |"
     echo "|                                           WELCOME TO CODE REPENT GRADIENT!                                           |"
     echo "|                                                                                                                      |"
     echo "|----------------------------------------------------------------------------------------------------------------------|"
+
     if [ $dFunc == "all" ]
     then
         echo "run all with debug"
         getRules # getRules 실행
-        init
+        startValueReminder
     elif [ $dFunc == "getRules" ] 
     then
         echo "run only getRules"
