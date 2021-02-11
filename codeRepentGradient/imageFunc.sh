@@ -1,15 +1,11 @@
 
 source /Users/baek/project/bashProjects/codeRepentGradient/dir.sh
+source /Users/baek/project/bashProjects/codeRepentGradient/log.sh
 
 declare imgList
 declare -a imgListArr
 
-log(){
-    if [[ $log == "-l" ]]
-    then
-        echo -e "$1"
-    fi
-}
+
 updateImgList(){
     imgListArr="$1"
 

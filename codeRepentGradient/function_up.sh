@@ -11,6 +11,7 @@ declare -a ruleIdxArr=()
 source dir.sh
 
 source ./imageFunc.sh
+source ./getValuesFunc.sh
 
 
 allArr=( ruleArr contArr ansArr limitArr completeArr)

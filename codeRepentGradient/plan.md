@@ -1,11 +1,67 @@
+
+
+iconv: (stdin):2:329: cannot convert
+
+가장 긴 줄이 있는 항목을 한줄로 줄여보았다.
+iconv: (stdin):1:108: cannot convert
+iconv: (stdin):1:340: cannot convert
+숫자가 변한다.
+
+그것보다 훨씬 더 긴 한 줄을 새로 만들어보았다.
+iconv: (stdin):1:287: cannot convert
+
+iconv: (stdin):1:379: cannot convert
+
+iconv: (stdin):1:775: cannot convert
+
+iconv: (stdin):1:57: cannot convert
+
+iconv: (stdin):1:730: cannot convert
+
+iconv: (stdin):1:4: cannot convert
+
+iconv: (stdin):1:108: cannot convert
+
+iconv: (stdin):1:340: cannot convert
+
+새로운 숫자들이 추가되었고 마지막 두줄은 기존의 줄이다. 새로 추가한 줄은 기존의 항목보다 먼저 온다. 그렇다면 아마 읽은 한 줄이 너무 길어서 그런가보다...버퍼를 초과하나?
+
 10. change the scope of the variables in functions.
 
 11. runner.sh option : start one iteratoin and then wait the basis minutes.
 
+지금 하는 것!!! : 패러그래프 나누기! 안나눠진다! 일단 한번 실행해보면 알 것! test의 rule4가 안나눠진다!
+test에서 마지막 긴 문단 사이에도 몇줄 넣으면 결과가 이상하게 나옴.
 
 
+getRules 전체에 사용되는 변수가 있음.
+curReadStage와 curReadArrIdx
+curReadStage는 새로운 arr을 만날 때마다 카운트가 올라간다.
+curReadArrIdx는 새로운 arr을 만날 때마다 해당 arr의 index로 업데이트.
+새로운 arr을 만날 때 바로 다음의 arr을 만나는게 아니라 띄엄띄엄 올라갈 수도 있음.
 
 
+eval : bash 기본 함수라고 생각하자. argument들을 받아서 string으로 합친 다음에 스크립트가 아닌 shell에서 그대로 출력/실행한다.
+eval "echo hi"
+어디에 쓰나? 변수를 겹칠 때.
+동일한 명령어를 혼합해서 쓸때
+cmd="echo"
+target=" hi"
+$cmd$target
+이렇게 하면 명령어로 인식하지 못하고 그냥 string으로 인식해서 해당 명령어를 찾지 못한다고 에러
+
+function pointer?
+cmd1="echo hi";cmd2=cmd1;eval \${$cmd1}
+
+그런데 eval이 security issue가 있어서...
+
+https://stackoverflow.com/questions/33775996/circular-name-reference
+line 542: local: warning: line: circular name reference
+```
+startCollectNewApdStrUntilTransNewArr(){
+    local -n line="$1"
+startCollectNewApdStrUntilTransNewArr "line"
+```
 
 2. multiple preview pictures are annoying.
 
