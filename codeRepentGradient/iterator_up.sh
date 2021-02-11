@@ -17,6 +17,8 @@ fi
 
 while [ 1 ]
 do
+    echo -e "$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y)" 
+
     var=$(( baseSec / 4 ))
     if [[ $var == 0 ]]
     then

@@ -1,5 +1,7 @@
 source ./log.sh
 
+SPLIT_BASE_LEN=1000
+
 if [[ -z allArr  ]] || [[ ${#allArr[@]} -lt 1 ]]
 then
     echo "ERROR. declare allArr variables before import getValuesFunc.sh"
@@ -291,9 +293,16 @@ initializeReadVars(){
 
 
 isLineTransToNextStage(){
-    local line="$1"
-    log "[isLineTransToNextStage] : input : |$line|"
-    if [[ $line == *"rule : "* ]] || [[ $line == *"cont : "* ]] || [[ $line == *"ans : "* ]] || [[ $line == *"limit : "* ]]
+    local -n line_ref="$1"
+    log "[isLineTransToNextStage] : input : |$line_ref|"
+
+    if [[ $line_ref == *"Rule : "* ]] || [[ $line_ref == *"Cont : "* ]] || [[ $line_ref == *"Ans : "* ]] || [[ $line_ref == *"Limit : "* ]]
+    then
+        line_ref=${line_ref,}
+    fi
+
+
+    if [[ $line_ref == *"rule : "* ]] || [[ $line_ref == *"cont : "* ]] || [[ $line_ref == *"ans : "* ]] || [[ $line_ref == *"limit : "* ]]
     then
         return 0
     else
@@ -405,14 +414,6 @@ configLineAndInitNewStage(){
         checkMissingStageAndFillArr
     fi
 
-
-    
-
-
-
-
-
-
 }
 
 finishOneStage(){
@@ -496,17 +497,20 @@ copyRuleForNextPrgp(){
 
 
 
-splitPrgh(){
+savePrghAndClearStrCollection(){
     
     local line="$1"
-    if ! isLineTransToNextStage "$line";
+    if ! isLineTransToNextStage "line";
     then
-        log "[splitPrgh] : not transition to new arr."
+        log "[savePrghAndClearStrCollection] : not transition to new arr."
         finishOneStage
         copyRuleForNextPrgp
         local curReadStage="$(getCurReadStage)"
         fillMissingArrayFromTo $(( curReadStage+1 )) $lenAllArr
     fi
+    # else, just move the next stage!
+    # 새로운 단락을 판단하는 기준은 여러 줄의 개행이 연속되어 나오다가 개행이 아닌 줄을 만났을 때이다.
+    # 새로 만난 줄이 새로운 단계라면 그냥 그대로 새로운 단계를 시작하면 된다.
 
 }
 isMeetNewline(){
@@ -530,23 +534,25 @@ isMeetContinuousNewline(){
 }
 
 
-isParagraphThenSplitAndSave(){
+isLineParagraph(){
     local line="$1"
     if isMeetNewline "$line";
     then
             NEW_LINE_COUNT=$(( NEW_LINE_COUNT + 1))
-            log "[isParagraphThenSplitAndSave] : NEW_LINE_COUNT : meet new line: $NEW_LINE_COUNT"
-            
+            log "[isLineParagraph] : NEW_LINE_COUNT : meet new line: $NEW_LINE_COUNT"
+            return 1
     else
-        if [ $NEW_LINE_COUNT -eq 1 ]
+        if [ $NEW_LINE_COUNT -eq 1 ] # 한줄의 개행을 만나다가 개행이 아닌 줄을 만났을 때
         then
             NEW_LINE_COUNT=0
-        elif [ $NEW_LINE_COUNT -gt 1 ]
+            return 1
+        elif [ $NEW_LINE_COUNT -gt 1 ] # 연속된 개행이 쌓이다가 개행이 아닌 줄을 만났을 때
         then
-            log "[isParagraphThenSplitAndSave] : face a paragraph : detected continuous newlines : $NEW_LINE_COUNT"
-
-            splitPrgh "$line"
+            log "[isLineParagraph] : face a paragraph : detected continuous newlines : $NEW_LINE_COUNT"
             NEW_LINE_COUNT=0
+            return 0
+        else # multiple continuous newlines : middle of checking paragraph
+            return 1
         fi
     fi
 }
@@ -554,7 +560,7 @@ saveStrCollectionAndStartNewStage(){
     # saveStrCollectionAndStartNewStage
     # 기존에 읽던 arr의 index : curStageArrIdx.
     # 그 arr에 현재까지 내용을 넣는다.
-    log "[appendCurLineToStrCollection] : face new stage : pause : line until flush the strCollection"
+    log "[saveStrCollectionAndStartNewStage] : face new stage : pause : line until flush the strCollection"
     
     finishOneStage
 
@@ -578,14 +584,17 @@ getRules(){
     # do
 
         log "[getRules] read and acummulate : $line"
-        isParagraphThenSplitAndSave "$line"
+        if isLineParagraph "$line";
+        then
+            savePrghAndClearStrCollection "$line"
+        fi
         
         if isMeetContinuousNewline;
         then
             continue
         fi
         
-        if isLineTransToNextStage "$line";
+        if isLineTransToNextStage "line";
         then    
            saveStrCollectionAndStartNewStage
         fi

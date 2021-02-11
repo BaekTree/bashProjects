@@ -1,6 +1,15 @@
 
 source /Users/baek/project/bashProjects/codeRepentGradient/dir.sh
-source /Users/baek/project/bashProjects/codeRepentGradient/log.sh
+# source /Users/baek/project/bashProjects/codeRepentGradient/log.sh
+
+IMAGE_LOG=1
+
+imgLog(){
+    if [[ $IMAGE_LOG == 1 ]]
+    then
+        echo -e "$1"
+    fi
+}
 
 declare imgList
 declare -a imgListArr
@@ -10,29 +19,34 @@ updateImgList(){
     imgListArr="$1"
 
     local curDir=$(pwd)
-    log "[updateVerses] : move to bible dir"
+    imgLog "[updateVerses] : move to bible dir"
     cd "$IMG_DIR"
-    log "[updateVerses] : pwd: $(pwd)"
+    imgLog "[updateVerses] : pwd: $(pwd)"
 
     local imgList=$(ls)
     imgListArr=($imgList)
 
-    log "[updateVerses] : back to cur dir : $curDir"
+    imgLog "[updateVerses] : back to cur dir : $curDir"
     cd ${curDir}
 }
 
 getRandImgIdx(){
     local imgListArr=("$@")
+    # echo $imgListArr
     local imgIdx=$(( $RANDOM % ${#imgListArr[@]} ))
-    echo "$imgIdx"
+    echo "$imgIdx" # return
+    # imgLog "[getRandImgIdx] : ${imgIdx}"
 
 }
 
 showImg(){
     # closePreview
+    getPreviewPid
+    # echo "$pids"
+
 
     local imgIdx="$(getRandImgIdx "${imgListArr[@]}")"
-    log "[showImg] opening ${imgListArr[${imgIdx}]}"
+    imgLog "[showImg] opening ${imgListArr[${imgIdx}]}"
     open -a Preview "$IMG_DIR/${imgListArr[${imgIdx}]}";
     sleep 0.5
     movePreview
@@ -81,12 +95,14 @@ getPreviewPid(){
 }
 
 closePreview(){
+    local pids="$1"
+    sleep 1
     if [ -z $pids ]
     then
-        log "[closeVerse] : no pids"
+        imgLog "[closeVerse] : no pids"
     else
-        log "[closeVerse] : preview pids : ${pids}"
-        log "[closeVerse] : killing preview $pids"
+        imgLog "[closeVerse] : preview pids : ${pids}"
+        imgLog "[closeVerse] : killing preview $pids"
         kill -9 ${pids}
         sleep 0.5
     fi
