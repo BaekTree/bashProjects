@@ -162,7 +162,7 @@ splitLargeStrAndStore(){
 
         fillMissingArrayFromTo $(( curReadStage+1 )) $lenAllArr
 
-        copyRuleForNextPrgp
+        copyCurStageRuleArr
 
 
 
@@ -179,9 +179,9 @@ saveStrCollectionToCurStageArr(){
     # priorIFS=$IFS
     # IFS=$origin_IFS
     local getCurReadArrIdx="$(getCurReadArrIdx)"
-    local str="$1"
+    local str="$(getStrCollection)"
     local curArr=${allArr[$getCurReadArrIdx]}
-    log "\n[saveStrCollectionToCurStageArr]-------------------------------------------|"
+    log "[saveStrCollectionToCurStageArr]--------------------------------------|"
     log "                                                                      |"
     log "[saveStrCollectionToCurStageArr] : current array index: $curArr"
     # log "[saveStrCollectionToCurStageArr] : $str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
@@ -194,18 +194,18 @@ saveStrCollectionToCurStageArr(){
     # # str=${str%% *}
     log "[saveStrCollectionToCurStageArr] : str : |$str|"
     # 기존 arr의 누적해왔던 값을 기존 arr에 쓴다.
-    # SPLIT_BASE_LEN=500
+    # SPLIT_BASE_LEN=$SPLIT_BASE_LEN
 
     # echo "$str"
     # echo "${#str}"
 
-if isLargeStr "$str";
-    then
+# if isLargeStr "$str";
+    # then
 #         # echo $(( ${#str} / $SPLIT_BASE_LEN ))
-        splitLargeStrAndStore "$str" "$curArr"
-else
+        # splitLargeStrAndStore "$str" "$curArr"
+# else
     cleanseStrAndStore "$str" "$curArr"
-fi
+# fi
 
     # str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
     # # str=${str%% *}
@@ -314,6 +314,7 @@ isLineTransToNextStage(){
 
 
 isValidLine(){
+    # local strCollection="$(getStrCollection)"
     local strCollection="$1"
     if [[ ! -z $strCollection ]] || [[ "$strCollection" != "" ]]
     then
@@ -418,13 +419,7 @@ configLineAndInitNewStage(){
 
 }
 
-saveStrCollectionAndFinishOneStage(){
-    local strCollection="$(getStrCollection)"
-    if isValidLine "$strCollection";#invalid when first line of txt. strCollection contains nothing, so empty string is put to ruleArr.
-    then
-        saveStrCollectionToCurStageArr "$strCollection"
-    fi
-}
+
 
 appendCurLineToStrCollection(){
     local line="$1"
@@ -444,11 +439,25 @@ appendCurLineToStrCollection(){
     local strClt="$(getStrCollection)"
 
     local lenStrClt=${#strClt}
+    echo $lenStrClt
     local lenLine=${#line}
+    echo $lenLine
+    local sum=$(( $lenStrClt + $lenLine ))
 
-    if [[ $(( $lenStrClt + $lenLine )) > 500 ]]
+    if [ $sum -gt $SPLIT_BASE_LEN ]
     then
-        save
+        echo overflow!
+        echo "sum : $sum"
+        echo "strCollction : $lenStrClt"
+        echo "line : $lenLine"
+        saveStrCollectionToCurStageArr
+
+
+        # updateNextCurReadStage
+        local curReadStage="$(getCurReadStage)"
+        echo "curReadStage : $curReadStage"
+        fillMissingArrayFromTo $(($curReadStage+1)) $lenAllArr
+        copyCurStageRuleArr
     fi
 
     #방금 읽은 줄을 priorAppendStr에 누적해서 추가!
@@ -482,9 +491,9 @@ logResultOption(){
 completeLastLine(){
 
     
-    local strCollection="$(getStrCollection)"
+    # local strCollection="$(getStrCollection)"
     log "[getRules] reading done. fill left over"
-    saveStrCollectionToCurStageArr "$strCollection"
+    saveStrCollectionToCurStageArr
 
     # 마지막 오브 마지막 limit은 다른 arr을 만나지 않는다. 마지막 줄 str을 저장해준다.
     # 새로운 arr을 만나야 업데이트를 해준다. 그런데 만나지 못하고 읽기가 끝나서 업데이트를 수동으로 해줘야 한다.
@@ -494,7 +503,7 @@ completeLastLine(){
 }
 
 
-copyRuleForNextPrgp(){
+copyCurStageRuleArr(){
 
         last_rule=${ruleArr[-1]}
         ruleArr+=($last_rule)
@@ -508,8 +517,8 @@ savePrghAndClearStrCollection(){
     # if ! isLineTransToNextStage "line";
     # then
         log "[savePrghAndClearStrCollection] : not transition to new arr."
-        saveStrCollectionAndFinishOneStage
-        copyRuleForNextPrgp
+        saveStrCollectionToCurStageArr
+        copyCurStageRuleArr
         
         local curReadStage="$(getCurReadStage)"
         fillMissingArrayFromTo $(( curReadStage+1 )) $lenAllArr
@@ -554,7 +563,6 @@ isLineParagraph(){
             return 1
         elif [[ $NEW_LINE_COUNT -gt 1 ]] &&  ! isLineTransToNextStage "line"; # 연속된 개행이 쌓이다가 개행이 아닌 줄을 만났을 때
         then
-            echo "para"
             log "[isLineParagraph] : face a paragraph : detected continuous newlines : $NEW_LINE_COUNT and next line is not new stage" 
             NEW_LINE_COUNT=0
             return 0
@@ -579,8 +587,12 @@ saveStrCollectionAndStartNewStage(){
     # 그 arr에 현재까지 내용을 넣는다.
     log "[saveStrCollectionAndStartNewStage] : face new stage : pause : line until flush the strCollection"
     
-    saveStrCollectionAndFinishOneStage
-
+    local strCollection="$(getStrCollection)"
+    #invalid when first line of txt. strCollection contains nothing, so empty string is put to ruleArr.
+    if isValidLine "$strCollection";
+    then
+        saveStrCollectionToCurStageArr
+    fi
     updateNextCurReadStage
     configLineAndInitNewStage "line"
 }
@@ -595,7 +607,7 @@ getRules(){
     # c 기준으로 텍스트는 개행문자로 끝이 나야 한다. 그게 아니면 에러를 발생시키고 마지막 while을 실행하지 않는다.
     # https://stackoverflow.com/questions/12916352/shell-script-read-missing-last-line
     # 보장하기 위해서 마지막 줄을 읽는 명령어를 추가.
-    while read -rn500 line || [ -n "$line" ]; do
+    while read -rn$SPLIT_BASE_LEN line || [ -n "$line" ]; do
 
     # while read -r line
     # do
@@ -606,7 +618,8 @@ getRules(){
             savePrghAndClearStrCollection
         fi
 
-        if isLineTransToNextStage "line";
+        
+        if  isLineTransToNextStage "line";
         then    
            saveStrCollectionAndStartNewStage
         fi
