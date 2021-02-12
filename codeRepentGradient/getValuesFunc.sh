@@ -439,23 +439,23 @@ appendCurLineToStrCollection(){
     local strClt="$(getStrCollection)"
 
     local lenStrClt=${#strClt}
-    echo $lenStrClt
+    # echo $lenStrClt
     local lenLine=${#line}
-    echo $lenLine
+    # echo $lenLine
     local sum=$(( $lenStrClt + $lenLine ))
 
     if [ $sum -gt $SPLIT_BASE_LEN ]
     then
-        echo overflow!
-        echo "sum : $sum"
-        echo "strCollction : $lenStrClt"
-        echo "line : $lenLine"
+        # echo overflow!
+        # echo "sum : $sum"
+        # echo "strCollction : $lenStrClt"
+        # echo "line : $lenLine"
         saveStrCollectionToCurStageArr
 
 
         # updateNextCurReadStage
         local curReadStage="$(getCurReadStage)"
-        echo "curReadStage : $curReadStage"
+        # echo "curReadStage : $curReadStage"
         fillMissingArrayFromTo $(($curReadStage+1)) $lenAllArr
         copyCurStageRuleArr
     fi
@@ -466,7 +466,7 @@ appendCurLineToStrCollection(){
 
 }
 
-logResultOption(){
+setZeroStageInDebugOption(){
 
     if [[ ! -z $debug ]] && [[ $debug = "-df" ]]
     then
@@ -482,10 +482,10 @@ logResultOption(){
         done
     fi
 
-    if [[ ! -z $log ]] && [[ $log = "-l" ]]
-    then
-        printArrs
-    fi
+    # if [[ ! -z $log ]] && [[ $log = "-l" ]]
+    # then
+    #     printArrs
+    # fi
 }
 
 completeLastLine(){
@@ -566,16 +566,10 @@ isLineParagraph(){
             log "[isLineParagraph] : face a paragraph : detected continuous newlines : $NEW_LINE_COUNT and next line is not new stage" 
             NEW_LINE_COUNT=0
             return 0
-        # else # multiple continuous newlines : middle of checking paragraph
-            # return 1
-        # elif ! isLineTransToNextStage "line";
-        # then
-            # return 0 # 새 줄을 만났는데 기존의 stage이면 문단이다.
-        else # 연속되지도 않은 그냥 일반적인 줄.
-            NEW_LINE_COUNT=0
-
-            return 1 # 새 줄이 새로운 stage이다. 그러면 여러 개행전에 모은게 문단 구분이 아니다. 
-            # 이것들은 기본적인 방식 : "새 stage을 만나면 저장한다"으로 처리.
+        else # 연속되지도 않은 그냥 일반적인 줄. 
+            # 혹은 1줄 보다 큰데 다음 stage을 만난 줄. 이 경우 연속된 줄 초기화를 해줘야 한다.
+            NEW_LINE_COUNT=0  
+            return 1
         fi
 
 
@@ -641,7 +635,7 @@ getRules(){
     # 따라서 명시적으로 다시 저장해주어야 한다.
     completeLastLine
     
-    # logResultOption
+    setZeroStageInDebugOption
 
     IFS=$priorIFS
 
