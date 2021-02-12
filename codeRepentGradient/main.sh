@@ -72,7 +72,7 @@ else # debug 일때
     then
         echo "run only getRules"
         getRules
-        printArrs
+        # printArrs
     else
         printUsage
     fi

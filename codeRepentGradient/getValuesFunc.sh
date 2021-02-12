@@ -482,10 +482,10 @@ setZeroStageInDebugOption(){
         done
     fi
 
-    # if [[ ! -z $log ]] && [[ $log = "-l" ]]
-    # then
-    #     printArrs
-    # fi
+    if [[ ! -z $log ]] && [[ $log = "-l" ]]
+    then
+        printArrs
+    fi
 }
 
 completeLastLine(){

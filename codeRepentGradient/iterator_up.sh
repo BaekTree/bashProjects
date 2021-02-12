@@ -6,21 +6,21 @@
 source dir.sh
 
 source parseArg.sh
-# output argument : debug, dFunc, arg_file, dFile, log, baseSecArg
+# output argument : debug, dFunc, arg_file, dFile, log, base_sec_arg, is_rnd_arg, rnd_option
 scrpt_name=$0
 args=($@)
 
 parseArg "$scrpt_name" "${args[@]}"
 
 
-# if [ -z $baseSecArg ]
+# if [ -z $base_sec_arg ]
 # then
 # 	baseSec=4500
-# elif [[ ! $baseSecArg =~ ^[0-9]*$ ]]; then 
+# elif [[ ! $base_sec_arg =~ ^[0-9]*$ ]]; then 
 #     echo -e "usage : iterator_up.sh <seconds>\n\tseconds here is the base seconds. \n\tThe shell adds random seconds 1/4 of the base seconds"
 #     exit 0
 # else
-#     baseSec=$baseSecArg
+#     baseSec=$base_sec_arg
 # fi
 
 
@@ -98,7 +98,7 @@ do
         fi
     done   
     # ./main.sh -l -f test_short.txt;   
-    ./main.sh "$debug" "$dFunc" "$arg_file" "$dFile" "$log";   
+    ./main.sh "$debug" "$dFunc" "$arg_file" "$dFile" "$log" "$is_rnd_arg" "$rnd_option";   
 
     echo -e "one is done!\n\n"
 done

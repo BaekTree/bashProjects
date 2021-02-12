@@ -2,7 +2,7 @@
 source /Users/baek/project/bashProjects/codeRepentGradient/dir.sh
 # source /Users/baek/project/bashProjects/codeRepentGradient/log.sh
 
-IMAGE_LOG=1
+IMAGE_LOG=0
 
 imgLog(){
     if [[ $IMAGE_LOG == 1 ]]
