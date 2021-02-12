@@ -197,49 +197,62 @@ REPEAT
     log "[startValueReminder] the number of rules : ${#ruleArr[@]}"
     
     
-    local -a ruleArrR=()
-    local -a contArrR=()
-    local -a ansArrR=()
-    local -a limitArrR=()
-    local -a completeArrR=()
-    local -a msgArrR=()
-    {
-            # local randRuleIdx=$(( $RANDOM % $ruleNum ))
-            # local i = ${uniqueRuleIdxArr[$randRuleIdx]}
-        local ruleNum=${#uniqueRuleIdxArr[@]}
-        local -a handler=(0 1 2)
-        local handle_i=0
-        
-        while [[ $handle_i < 3 ]]
-        do
-            local randRuleIdx=$(( $RANDOM % $(($ruleNum - 3)) ))
-            # echo $randRuleIdx
-            handler+=($(($randRuleIdx + 3)))
+
+    local isRnd=0
+    if [[ $isRnd = 1 ]]
+    then
+        {
+            local -a ruleArrR=()
+            local -a contArrR=()
+            local -a ansArrR=()
+            local -a limitArrR=()
+            local -a completeArrR=()
+            local -a msgArrR=()
+                # local randRuleIdx=$(( $RANDOM % $ruleNum ))
+                # local i = ${uniqueRuleIdxArr[$randRuleIdx]}
+            local ruleNum=${#uniqueRuleIdxArr[@]}
+            local -a handler=(0 1 2)
+            local handle_i=0
             
-
-            # echo $idx
-            handle_i=$(( handle_i + 1 ))
-        done
-
-        for (( handle_i=0; handle_i<${#handler[@]}; handle_i++ ))
-        do
-            local randRuleIdx=${handler[$handle_i]}
-            local start_idx=${uniqueRuleIdxArr[$randRuleIdx]}
-            local end_idx=${uniqueRuleIdxArr[$(($randRuleIdx+1))]}
-            local range=$(( $end_idx - $start_idx ))
-
-            for (( i=$start_idx; i<$end_idx; i++ ))
+            while [[ $handle_i < 3 ]]
             do
-                # echo -e "${ruleArrR[$i]}"
-                ruleArrR+=("${ruleArr[$i]}")
-                contArrR+=("${contArr[$i]}")
-                ansArrR+=("${ansArr[$i]}")
-                limitArrR+=("${limitArr[$i]}")
-                completeArrR+=("${completeArr[$i]}")
-                msgArrR+=("${msgArr[$i]}")
+                local randRuleIdx=$(( $RANDOM % $(($ruleNum - 3)) ))
+                # echo $randRuleIdx
+                handler+=($(($randRuleIdx + 3)))
+                
+
+                # echo $idx
+                handle_i=$(( handle_i + 1 ))
             done
-        done
-    }
+
+            for (( handle_i=0; handle_i<${#handler[@]}; handle_i++ ))
+            do
+                local randRuleIdx=${handler[$handle_i]}
+                local start_idx=${uniqueRuleIdxArr[$randRuleIdx]}
+                local end_idx=${uniqueRuleIdxArr[$(($randRuleIdx+1))]}
+                local range=$(( $end_idx - $start_idx ))
+
+                for (( i=$start_idx; i<$end_idx; i++ ))
+                do
+                    # echo -e "${ruleArrR[$i]}"
+                    ruleArrR+=("${ruleArr[$i]}")
+                    contArrR+=("${contArr[$i]}")
+                    ansArrR+=("${ansArr[$i]}")
+                    limitArrR+=("${limitArr[$i]}")
+                    completeArrR+=("${completeArr[$i]}")
+                    msgArrR+=("${msgArr[$i]}")
+                done
+            done
+        }
+    else
+        declare -n ruleArrR=ruleArr
+        declare -n contArrR=contArr
+        declare -n ansArrR=ansArr
+        declare -n limitArrR=limitArr
+        declare -n completeArrR=completeArr
+        declare -n msgArrR=msgArr
+    fi
+
 
 
     local i
