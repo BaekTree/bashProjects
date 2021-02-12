@@ -199,13 +199,13 @@ saveStrCollectionToCurStageArr(){
     # echo "$str"
     # echo "${#str}"
 
-if isLargeStr "$str";
-    then
+# if isLargeStr "$str";
+    # then
 #         # echo $(( ${#str} / $SPLIT_BASE_LEN ))
         splitLargeStrAndStore "$str" "$curArr"
-else
+# else
     cleanseStrAndStore "$str" "$curArr"
-fi
+# fi
 
     # str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
     # # str=${str%% *}
