@@ -3,17 +3,26 @@
 
 
 
+source dir.sh
 
-baseSecArg=$1
-if [ -z $baseSecArg ]
-then
-	baseSec=4500
-elif [[ ! $baseSecArg =~ ^[0-9]*$ ]]; then 
-    echo -e "usage : iterator_up.sh <minutes>\n\tminutes here is the base minutes. \n\tThe shell adds random minutes 1/4 of the base minutes"
-    exit 0
-else
-    baseSec=$baseSecArg
-fi
+source parseArg.sh
+# output argument : debug, dFunc, arg_file, dFile, log, baseSecArg
+scrpt_name=$0
+args=($@)
+
+parseArg "$scrpt_name" "${args[@]}"
+
+
+# if [ -z $baseSecArg ]
+# then
+# 	baseSec=4500
+# elif [[ ! $baseSecArg =~ ^[0-9]*$ ]]; then 
+#     echo -e "usage : iterator_up.sh <seconds>\n\tseconds here is the base seconds. \n\tThe shell adds random seconds 1/4 of the base seconds"
+#     exit 0
+# else
+#     baseSec=$baseSecArg
+# fi
+
 
 while [ 1 ]
 do
@@ -89,7 +98,7 @@ do
         fi
     done   
     # ./main.sh -l -f test_short.txt;   
-    ./main.sh -f rules_up_only_kor.txt;   
+    ./main.sh "$debug" "$dFunc" "$arg_file" "$dFile" "$log";   
 
     echo -e "one is done!\n\n"
 done
