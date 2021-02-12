@@ -179,9 +179,9 @@ saveStrCollectionToCurStageArr(){
     # priorIFS=$IFS
     # IFS=$origin_IFS
     local getCurReadArrIdx="$(getCurReadArrIdx)"
-    local str="$1"
+    local str="$(getStrCollection)"
     local curArr=${allArr[$getCurReadArrIdx]}
-    log "\n[saveStrCollectionToCurStageArr]-------------------------------------------|"
+    log "[saveStrCollectionToCurStageArr]--------------------------------------|"
     log "                                                                      |"
     log "[saveStrCollectionToCurStageArr] : current array index: $curArr"
     # log "[saveStrCollectionToCurStageArr] : $str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
@@ -202,7 +202,7 @@ saveStrCollectionToCurStageArr(){
 # if isLargeStr "$str";
     # then
 #         # echo $(( ${#str} / $SPLIT_BASE_LEN ))
-        splitLargeStrAndStore "$str" "$curArr"
+        # splitLargeStrAndStore "$str" "$curArr"
 # else
     cleanseStrAndStore "$str" "$curArr"
 # fi
@@ -314,6 +314,7 @@ isLineTransToNextStage(){
 
 
 isValidLine(){
+    # local strCollection="$(getStrCollection)"
     local strCollection="$1"
     if [[ ! -z $strCollection ]] || [[ "$strCollection" != "" ]]
     then
@@ -418,13 +419,13 @@ configLineAndInitNewStage(){
 
 }
 
-saveStrCollectionAndFinishOneStage(){
-    local strCollection="$(getStrCollection)"
-    if isValidLine "$strCollection";#invalid when first line of txt. strCollection contains nothing, so empty string is put to ruleArr.
-    then
-        saveStrCollectionToCurStageArr "$strCollection"
-    fi
-}
+# saveStrCollectionToCurStageArr(){
+#     # local strCollection="$(getStrCollection)"
+#     # if isValidLine ;#invalid when first line of txt. strCollection contains nothing, so empty string is put to ruleArr.
+#     # then
+#         saveStrCollectionToCurStageArr
+#     # fi
+# }
 
 appendCurLineToStrCollection(){
     local line="$1"
@@ -441,15 +442,15 @@ appendCurLineToStrCollection(){
     # sed을 사용 : s/*\n$//이 잘 안된다. sed는 개행을 기준으로 해서. 그래서... sed를 더 깊게... ba 사용.
     log "[appendCurLineToStrCollection] : running append"
 
-    local strClt="$(getStrCollection)"
+    # local strClt="$(getStrCollection)"
 
-    local lenStrClt=${#strClt}
-    local lenLine=${#line}
+    # local lenStrClt=${#strClt}
+    # local lenLine=${#line}
 
-    if [[ $(( $lenStrClt + $lenLine )) > 500 ]]
-    then
-        save
-    fi
+    # if [[ $(( $lenStrClt + $lenLine )) > 500 ]]
+    # then
+    #     saveStrCollectionToCurStageArr
+    # fi
 
     #방금 읽은 줄을 priorAppendStr에 누적해서 추가!
     appendStrCollection "$line\n"
@@ -482,9 +483,9 @@ logResultOption(){
 completeLastLine(){
 
     
-    local strCollection="$(getStrCollection)"
+    # local strCollection="$(getStrCollection)"
     log "[getRules] reading done. fill left over"
-    saveStrCollectionToCurStageArr "$strCollection"
+    saveStrCollectionToCurStageArr
 
     # 마지막 오브 마지막 limit은 다른 arr을 만나지 않는다. 마지막 줄 str을 저장해준다.
     # 새로운 arr을 만나야 업데이트를 해준다. 그런데 만나지 못하고 읽기가 끝나서 업데이트를 수동으로 해줘야 한다.
@@ -508,7 +509,7 @@ savePrghAndClearStrCollection(){
     # if ! isLineTransToNextStage "line";
     # then
         log "[savePrghAndClearStrCollection] : not transition to new arr."
-        saveStrCollectionAndFinishOneStage
+        saveStrCollectionToCurStageArr
         copyRuleForNextPrgp
         
         local curReadStage="$(getCurReadStage)"
@@ -579,8 +580,12 @@ saveStrCollectionAndStartNewStage(){
     # 그 arr에 현재까지 내용을 넣는다.
     log "[saveStrCollectionAndStartNewStage] : face new stage : pause : line until flush the strCollection"
     
-    saveStrCollectionAndFinishOneStage
-
+    local strCollection="$(getStrCollection)"
+    #invalid when first line of txt. strCollection contains nothing, so empty string is put to ruleArr.
+    if isValidLine "$strCollection";
+    then
+        saveStrCollectionToCurStageArr
+    fi
     updateNextCurReadStage
     configLineAndInitNewStage "line"
 }
@@ -606,7 +611,8 @@ getRules(){
             savePrghAndClearStrCollection
         fi
 
-        if isLineTransToNextStage "line";
+        
+        if  isLineTransToNextStage "line";
         then    
            saveStrCollectionAndStartNewStage
         fi
