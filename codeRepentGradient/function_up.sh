@@ -51,7 +51,7 @@ apple_dialog_text(){
     # closePreview;
     parseBtnAns $res
     parseTxt $res
-    showImg &
+    showImg
 
 }
 
@@ -73,7 +73,7 @@ apple_dialog_show(){
 
 
     # res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt default button \"Next\"")
-    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt")
+    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt default button \"Next\"")
 
     parseBtnAns $res
     showImg &
@@ -499,9 +499,11 @@ PSEUDO
 
     # record "ARE YOU OBSESSED? ${msg}"
 
-    local pids=$(pgrep Preview)
+    # local pids=$(pgrep Preview)
 
-    closePreview $pids
+    # closePreview $pids
+    sleep 1
+    closePreview
     
 
 }
