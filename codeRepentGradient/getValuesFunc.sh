@@ -1,7 +1,8 @@
 source ./log.sh
-export LANG="ko_KR.UTF-8" #없으면 간혹 sed: RE error: illegal byte sequence 무한반복?
+# export LANG="ko_KR.UTF-8" #없으면 간혹 sed: RE error: illegal byte sequence 무한반복?
 
 SPLIT_BASE_LEN=1000
+READ_BASE_LEN=$(( $SPLIT_BASE_LEN / 10 ))
 
 if [[ -z allArr  ]] || [[ ${#allArr[@]} -lt 1 ]]
 then
@@ -86,91 +87,34 @@ isLargeStr(){
     fi
 }
 
-cleanseStrAndStore(){
-    local str="$1"
-    local curArr="$2"
-    log "[cleanseStrAndStore] : curArr : |$curArr|"
-
-
-    declare -n refArr=$curArr
-    log "[cleanseStrAndStore] : original : |$str|"
-   
-   
-    # local -n refArr="$2"
-    # local str="$1"
-    # local refArr="$2"
-    if [[ ! -z $str ]]
+cleanseStr(){
+    local -n str_ref="$1"
+    log "[cleanseStr] : original : |$str|"
+    if [[ ! -z $str_ref ]]
     then
     # #     # {
-    # #         # echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' >> /dev/null
+    # #         # echo -e "$str_ref" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' >> /dev/null
     # #     # } || {
     # #     #     echo "iconv fail"
-    # #     #     echo "$str"
+    # #     #     echo "$str_ref"
     # #     # }
 
     # #     # https://stackoverflow.com/questions/11287564/getting-sed-error-illegal-byte-sequence-in-bash
-        str=$(echo -e "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' 2>/dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
-        str=$(echo -e "$str" | sed -e 's/ *$//' 2>/dev/null)
-    #     # str=$(echo -e "$str" | sed -e 's/ $//' 2> /dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+        str=$(echo -e "$str_ref" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' 2>/dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+        str=$(echo -e "$str_ref" | sed -e 's/ *$//' 2>/dev/null)
+    #     # str=$(echo -e "$str_ref" | sed -e 's/ $//' 2> /dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
         # str="${str%%" "}"
 
 
-    # #     # str=$(LC_CTYPE=C echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba') # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
-    
-    fi
+    # #     # str=$(LC_CTYPE=C echo -e "$str_ref" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba') # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
     # str=${str%% *}
-    log "[cleanseStrAndStore] : final string : |$str|"
-    log "[cleanseStrAndStore] : arr : |${refArr[*]}|"
-    refArr+=("$str")
-    log "[cleanseStrAndStore] : array append result : |${refArr[*]}|"
-}
-
-splitLargeStrAndStore(){
-    local str="$1"
-    local curArr="$2"
-    while [ $(( ${#str} / $SPLIT_BASE_LEN )) -gt  0 ]
-    do
-        # echo $(( ${#str} / $SPLIT_BASE_LEN ))
-        log "[target] : |$str|"
-        # 구원자!!
-        # https://forum.ubuntu-kr.org/viewtopic.php?t=25616
-        # frontSeg="$(echo $str | cut -b -$SPLIT_BASE_LEN | iconv 2>/dev/null)"
-        frontSeg="$(echo $str | cut -b -$SPLIT_BASE_LEN)"
-
-        # frontSeg="${str:0:$SPLIT_BASE_LEN}"
-        log "[frontSeg] : |$frontSeg|"
-        endSeg="${str#"$frontSeg"}"
-        # endSeg="${str#$frontSeg}" # 제대로 잘라내지 못한다. 중간에 껴있는 space나 개행 때문에 통으로 인식하지 못한다. 숫자는 {}을 붙이고 문자는 ""을 붙여라!
-        log "[endSeg] : |$endSeg|"
-        # exit 0
-        ### 
-        # endSeg=${str:$SPLIT_BASE_LEN} # $SPLIT_BASE_LEN자부터 끝까지. 뒷부분이 된다.
+    log "[cleanseStr] : final string : |$str|"
 
 
-
-        # frontSeg=${str%$endSeg}
-        log "[splitLargeStrAndStore] : cut $SPLIT_BASE_LEN chars : |$frontSeg|"
-
-        cleanseStrAndStore "$frontSeg" "$curArr"
-
-        # cleanStr=$(echo -e "$frontSeg" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
-        # # str=${str%% *}
-        # log "[splitLargeStrAndStore] :cleanStr: |$cleanStr|"
-
-        
-        local curReadStage="$(getCurReadStage)"
-
-        fillMissingArrayFromTo $(( curReadStage+1 )) $lenAllArr
-
-        copyCurStageRuleArr
-
-
-
-
-        str="$endSeg"
-    done
-    cleanseStrAndStore "$str" "$curArr"
-
+    # str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+    # # str=${str%% *}
+    # log "[saveStrCollectionToCurStageArr] : |$str|"
+    fi
 }
 
 saveStrCollectionToCurStageArr(){
@@ -204,12 +148,18 @@ saveStrCollectionToCurStageArr(){
 #         # echo $(( ${#str} / $SPLIT_BASE_LEN ))
         # splitLargeStrAndStore "$str" "$curArr"
 # else
-    cleanseStrAndStore "$str" "$curArr"
+    # cleanseStrAndStore "$str" "$curArr"
 # fi
+    
+    log "[saveStrCollectionToCurStageArr] : curArr : |$curArr|"
 
-    # str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
-    # # str=${str%% *}
-    # log "[saveStrCollectionToCurStageArr] : |$str|"
+    declare -n refArr=$curArr
+    
+
+   
+    log "[saveStrCollectionToCurStageArr] : arr : |${refArr[*]}|"
+    refArr+=("$str")
+    log "[saveStrCollectionToCurStageArr] : array append result : |${refArr[*]}|"
     # refArr+=("$str")
 
 
@@ -426,7 +376,8 @@ appendCurLineToStrCollection(){
     # log "[appendCurLineToStrCollection] priorAppendStr input : $priorAppendStr"
 
         
-
+    cleanseStr "line"
+    # echo "$line"
         # rule으로 시작하고, 방금 줄은 str에 입력했으니 이제 계속 누적을 하고, rule이 아닌 줄을 만났을 때 ruleArr에 넣는다!
         # return
 
@@ -461,7 +412,11 @@ appendCurLineToStrCollection(){
     fi
 
     #방금 읽은 줄을 priorAppendStr에 누적해서 추가!
-    appendStrCollection "$line\n"
+    if [ ${#line} -lt $READ_BASE_LEN ]
+    then
+        line="$line\n"
+    fi
+    appendStrCollection "$line"    
 
 
 }
@@ -601,7 +556,9 @@ getRules(){
     # c 기준으로 텍스트는 개행문자로 끝이 나야 한다. 그게 아니면 에러를 발생시키고 마지막 while을 실행하지 않는다.
     # https://stackoverflow.com/questions/12916352/shell-script-read-missing-last-line
     # 보장하기 위해서 마지막 줄을 읽는 명령어를 추가.
-    while read -rn$SPLIT_BASE_LEN line || [ -n "$line" ]; do
+
+
+    while read -rn$READ_BASE_LEN line || [ -n "$line" ]; do
 
     # while read -r line
     # do
@@ -641,3 +598,92 @@ getRules(){
 
 
 }
+
+
+
+# cleanseStrAndStore(){
+#     local str="$1"
+#     local curArr="$2"
+#     log "[cleanseStrAndStore] : curArr : |$curArr|"
+
+
+#     declare -n refArr=$curArr
+#     log "[cleanseStrAndStore] : original : |$str|"
+   
+   
+#     # local -n refArr="$2"
+#     # local str="$1"
+#     # local refArr="$2"
+#     if [[ ! -z $str ]]
+#     then
+#     # #     # {
+#     # #         # echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' >> /dev/null
+#     # #     # } || {
+#     # #     #     echo "iconv fail"
+#     # #     #     echo "$str"
+#     # #     # }
+
+#     # #     # https://stackoverflow.com/questions/11287564/getting-sed-error-illegal-byte-sequence-in-bash
+#         str=$(echo -e "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' 2>/dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+#         str=$(echo -e "$str" | sed -e 's/ *$//' 2>/dev/null)
+#     #     # str=$(echo -e "$str" | sed -e 's/ $//' 2> /dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+#         # str="${str%%" "}"
+
+
+#     # #     # str=$(LC_CTYPE=C echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba') # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+    
+#     fi
+#     # str=${str%% *}
+#     log "[cleanseStrAndStore] : final string : |$str|"
+#     log "[cleanseStrAndStore] : arr : |${refArr[*]}|"
+#     refArr+=("$str")
+#     log "[cleanseStrAndStore] : array append result : |${refArr[*]}|"
+# }
+
+# splitLargeStrAndStore(){
+#     local str="$1"
+#     local curArr="$2"
+#     while [ $(( ${#str} / $SPLIT_BASE_LEN )) -gt  0 ]
+#     do
+#         # echo $(( ${#str} / $SPLIT_BASE_LEN ))
+#         log "[target] : |$str|"
+#         # 구원자!!
+#         # https://forum.ubuntu-kr.org/viewtopic.php?t=25616
+#         # frontSeg="$(echo $str | cut -b -$SPLIT_BASE_LEN | iconv 2>/dev/null)"
+#         frontSeg="$(echo $str | cut -b -$SPLIT_BASE_LEN)"
+
+#         # frontSeg="${str:0:$SPLIT_BASE_LEN}"
+#         log "[frontSeg] : |$frontSeg|"
+#         endSeg="${str#"$frontSeg"}"
+#         # endSeg="${str#$frontSeg}" # 제대로 잘라내지 못한다. 중간에 껴있는 space나 개행 때문에 통으로 인식하지 못한다. 숫자는 {}을 붙이고 문자는 ""을 붙여라!
+#         log "[endSeg] : |$endSeg|"
+#         # exit 0
+#         ### 
+#         # endSeg=${str:$SPLIT_BASE_LEN} # $SPLIT_BASE_LEN자부터 끝까지. 뒷부분이 된다.
+
+
+
+#         # frontSeg=${str%$endSeg}
+#         log "[splitLargeStrAndStore] : cut $SPLIT_BASE_LEN chars : |$frontSeg|"
+
+#         cleanseStrAndStore "$frontSeg" "$curArr"
+
+#         # cleanStr=$(echo -e "$frontSeg" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+#         # # str=${str%% *}
+#         # log "[splitLargeStrAndStore] :cleanStr: |$cleanStr|"
+
+        
+#         local curReadStage="$(getCurReadStage)"
+
+#         fillMissingArrayFromTo $(( curReadStage+1 )) $lenAllArr
+
+#         copyCurStageRuleArr
+
+
+
+
+#         str="$endSeg"
+#     done
+#     cleanseStrAndStore "$str" "$curArr"
+
+# }
