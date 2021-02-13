@@ -199,7 +199,7 @@ REPEAT
     
 
     # local is_rnd_arg=0
-    if [[ ! -z $is_rnd_arg ]] && [[ $is_rnd_arg = 1 ]]
+    if [[ ! -z $is_rnd_arg ]] && [[ $is_rnd_arg == "-r" ]]
     then
         {
             local -a ruleArrR=()
@@ -249,7 +249,7 @@ REPEAT
             #     echo ${uniqueRuleIdxArr[$s_i]}
             # done
 
-            selectedRuleArr+=($(( ${#uniqueRuleIdxArr[@]} - 1 )))
+            # selectedRuleArr+=($(( ${#uniqueRuleIdxArr[@]} - 1 )))
             # echo "uniqueRuleIdxArr의 마지막 값 : ${uniqueRuleIdxArr[$(( ${#uniqueRuleIdxArr[@]} - 1 ))]}"
             # echo 
 
