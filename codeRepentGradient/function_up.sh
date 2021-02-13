@@ -45,15 +45,67 @@ apple_dialog(){
     fi
 }
 
+# flexible btns
+btnNext="Next"
+btnSubmit="Submit To God"
+btnBack="Back"
+btnImg="Img"
+btnTgg="tgg"
+
+declare -a btnArrText=("$btnSubmit" "$btnBack" "$btnTgg"  )
+declare -a btnArrShow=("$btnNext" "$btnBack")
+
+declare -a btnArr=("$btnSubmit" "$btnBack" "$btnTgg" "$btnNext" )
+# addBtn(){
+#     local str="$1"
+#     btnArrText+=("$str")
+
+
+# }
+
+createBtns(){
+    local -n btnArr="$1"
+    # btnArr=($btnArr)
+    # echo "create"
+    echo "${btnArr[@]}"
+    # echo "${#btnArr[@]}"
+
+    local btns="buttons {"
+    for (( b_i=0; b_i<$(( ${#btnArr[@]} - 1 )); b_i++ ))
+    do  
+        echo "$b_i : ${btnArr[$b_i]}"
+        btns+="\""${btnArr[$b_i]}"\", "
+    done
+    btns+="\""${btnArr[$(( ${#btnArr[@]} - 1 ))]}"\"}"
+    
+    echo "$btns"
+
+}
+
+chckBtn(){
+    local str="$1"
+}
+
+# addBtn "$btnSubmit"
+# addBtn "$btnBack"
+# addBtn "$btnTgg"
+# createBtns "${btnArrText[*]}"
+textBtns=$(createBtns "btnArrText")
+
 apple_dialog_text(){
     log "[apple_dialog_text input]----------------------------------------:\n$1\n----------------------------------------\n"
-    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Submit To God\", \"Back\"} default answer \"\" default button \"Submit To God\"")
+    textBtns="buttons {\"Next\",\"Back\", \"Submit To God\", \"tgg\"}"
+    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Back\", \"Submit To God\", \"tgg\"}  default answer \"\" default button \"$btnSubmit\"")
     # closePreview;
     parseBtnAns $res
     parseTxt $res
-    showImg
+    showImg 
 
 }
+
+
+
+
 
 
 apple_dialog_show(){
@@ -65,9 +117,9 @@ apple_dialog_show(){
     # do
         if [[ ! -z $shw_arg ]] && [[ $shw_arg = "single" ]]
         then
-            btn_txt="buttons {\"Next\"}"
+            btn_txt="buttons {\"tgg\", \"Next\"}"
         else
-            btn_txt="buttons {\"Next\",\"Back\"}"
+            btn_txt="buttons {\"tgg\", \"Next\",\"Back\"}"
         fi
     # done
 
@@ -76,7 +128,7 @@ apple_dialog_show(){
     res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt default button \"Next\"")
 
     parseBtnAns $res
-    showImg &
+    showImg 
 }
 
 
@@ -85,17 +137,18 @@ parseBtnAns(){
     priorIFS=$IFS
     IFS=$":,"
     local arg=($1)
-    log "[parseBtnAns] ARG : ${arg[@]}"
+    log "[parseBtnAns] ARG : ${arg[*]}"
 
     local a
     for a in ${arg[@]}
     do
         log "[parseBtnAns] : arg array element : $a"
-        if [ ${a} = "Submit To God" -o ${a} = "Next" -o ${a} = "Back" ]
+
+        if [ ${a} = "Submit To God" -o ${a} = "Next" -o ${a} = "Back" -o ${a} = "tgg" ]
         then
             ans=${a}
             log "[parseBtnAns] : ----------button answer is $ans----------"
-        fi        
+        fi 
     done
     IFS=$priorIFS
 }
@@ -179,13 +232,13 @@ Max glob arg_me U(G, me) s.t. U(me) <= U(G)
 --------------------------------------------------------------
 Welcome Back to Code Repent Gradient!\n$warn" "single"
 
-    apple_dialog_show $rules "single"
-    while [ "$ans" = "No" ]
-    do
-        apple_dialog_show "${warn}\n\n${rules}" "single"
-    done
+    apple_dialog_show "$rules" "single"
+    # while [ "$ans" = "No" ]
+    # do
+    #     apple_dialog_show "${warn}\n\n${rules}" "single"
+    # done
 
-
+    # exit 0
 << "REPEAT"
 
 REPEAT
@@ -349,7 +402,7 @@ REPEAT
             log "[startValueReminder] parsed button from user : $ans"
             log "[startValueReminder] parsed answer from user : $msg"
 
-            if [ "$ans" = "Back" ]
+            if [ "$ans" = "$btnBack" ]
             then
                 log "[startValueReminder] button stat------------------------pressBack------------------------"
                 i=$(( i-2 ))
@@ -358,6 +411,10 @@ REPEAT
                     i=-1
                 fi
                 continue
+            elif [ "$ans" = "tgg" ]
+            then 
+                toggleImg
+                i=$(( i-1 ))
             fi
 
             # if [ ${limitArrR[$i]} = " " ]
@@ -394,7 +451,7 @@ REPEAT
 
                     # alertUpdate $msg $limit
                     apple_dialog_text "${alrt}${warn}${ruleArrR[${i}]}\n\nType$correctRes"
-                    if [ "$ans" = "Back" ]
+                    if [ "$ans" = "$btnBack" ]
                     then
                         log "[startValueReminder] button stat : ------------------------pressBack------------------------"
                         i=$(( i-2 ))
@@ -406,6 +463,10 @@ REPEAT
                         backFlag=1
 
                         break
+                    elif [ "$ans" = "tgg" ]
+                    then 
+                        toggleImg
+                        i=$(( i-1 ))
                     fi
             done
 
@@ -433,7 +494,7 @@ REPEAT
                 apple_dialog_show "$contents"
             fi
 
-            if [ "$ans" = "Back" ]
+            if [ "$ans" = "$btnBack" ]
             then
                 log "[startValueReminder] current button stat : ------------------------pressBack------------------------"
                 i=$(( i-2 ))
@@ -441,6 +502,10 @@ REPEAT
                 then
                     i=-1
                 fi
+            elif [ "$ans" = "tgg" ]
+            then 
+                toggleImg
+                i=$(( i-1 ))
             else # when press Next
                 log "[startValueReminder] current button stat : ------------------------pressNext------------------------"
                 continue
