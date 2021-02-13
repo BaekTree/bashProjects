@@ -4,7 +4,7 @@ source /Users/baek/project/bashProjects/codeRepentGradient/dir.sh
 
 IMAGE_LOG=1
 
-imgToggle=0
+imgToggle=1
 
 imgLog(){
     if [[ $IMAGE_LOG == 1 ]]
@@ -49,6 +49,7 @@ toggleImg(){
         closePreview
     else
         imgToggle=1
+        showImg
     fi
 }
 
@@ -56,7 +57,7 @@ showImg(){
     if [[ $imgToggle == 1 ]]
     then
         # closePreview
-        getPreviewPid
+        # getPreviewPid
         # echo "$pids"
 
         # sample : open -a Preview /Users/baek/OneDrive/사진/삼성\ 갤러리/Pictures/Bible/1608648596555.png
@@ -71,7 +72,7 @@ showImg(){
 }
 
 movePreview(){
-    getPreviewPid
+    local pids="$(getPreviewPid)"
     if [ ! -z $pids ]
     then
         priorIFS="$IFS"
