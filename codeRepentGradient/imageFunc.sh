@@ -2,7 +2,9 @@
 source /Users/baek/project/bashProjects/codeRepentGradient/dir.sh
 # source /Users/baek/project/bashProjects/codeRepentGradient/log.sh
 
-IMAGE_LOG=0
+IMAGE_LOG=1
+
+imgToggle=0
 
 imgLog(){
     if [[ $IMAGE_LOG == 1 ]]
@@ -39,17 +41,33 @@ getRandImgIdx(){
 
 }
 
+toggleImg(){
+    if [[ $imgToggle == 1 ]]
+    then
+        imgToggle=0
+
+        closePreview
+    else
+        imgToggle=1
+    fi
+}
+
 showImg(){
-    # closePreview
-    getPreviewPid
-    # echo "$pids"
+    if [[ $imgToggle == 1 ]]
+    then
+        # closePreview
+        getPreviewPid
+        # echo "$pids"
 
+        # sample : open -a Preview /Users/baek/OneDrive/사진/삼성\ 갤러리/Pictures/Bible/1608648596555.png
 
-    local imgIdx="$(getRandImgIdx "${imgListArr[@]}")"
-    imgLog "[showImg] opening ${imgListArr[${imgIdx}]}"
-    open -a Preview "$IMG_DIR/${imgListArr[${imgIdx}]}";
-    sleep 0.5
-    movePreview
+        local imgIdx="$(getRandImgIdx "${imgListArr[@]}")"
+        imgLog "[showImg] opening ${imgListArr[${imgIdx}]}"
+        # osascript -e "tell application \"Finder\" to open \"$IMG_DIR/${imgListArr[${imgIdx}]}\"";
+        open -a Preview "$IMG_DIR/${imgListArr[${imgIdx}]}";
+        sleep 0.5
+        movePreview
+    fi
 }
 
 movePreview(){
@@ -91,19 +109,23 @@ movePreview(){
 }
 
 getPreviewPid(){
-    pids=$(pgrep Preview)   
+    local pids=$(pgrep Preview)   
+    echo $pids
 }
 
 closePreview(){
-    local pids="$1"
-    sleep 1
-    if [ -z $pids ]
+    
+
+    local pids="$(getPreviewPid)"
+    # sleep 1
+    if [ ! -z $pids ]
     then
-        imgLog "[closeVerse] : no pids"
-    else
-        imgLog "[closeVerse] : preview pids : ${pids}"
-        imgLog "[closeVerse] : killing preview $pids"
-        kill -9 ${pids}
-        sleep 0.5
+        pkill Preview
+    #     imgLog "[closeVerse] : no pids"
+    # else
+    #     imgLog "[closeVerse] : preview pids : ${pids}"
+    #     imgLog "[closeVerse] : killing preview $pids"
+    #     kill -9 ${pids}
+    #     sleep 0.5
     fi
 }
