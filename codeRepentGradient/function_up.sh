@@ -51,6 +51,9 @@ btnSubmit="Submit To God"
 btnBack="Back"
 btnImg="Img"
 btnTgg="tgg"
+btnOff="Off"
+btnSlt="txtWimg"
+
 
 declare -a btnArrText=("$btnSubmit" "$btnBack" "$btnTgg"  )
 declare -a btnArrShow=("$btnNext" "$btnBack")
@@ -105,8 +108,39 @@ apple_dialog_text(){
 
 
 
+modeSelection(){
 
 
+    local btn_txt="buttons {\"txtWimg\", \"Img\"}"
+
+
+
+
+
+    # res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt default button \"Next\"")
+    res=$(osascript -e "display dialog \"mode selection\" with title \"Code Repent Gradient\" $btn_txt ")
+
+    parseBtnAns "$res"   
+}
+
+
+imgNav(){
+    local btn_txt
+    local shw_arg=$1
+    if [[ ! -z $shw_arg ]] && [[ $shw_arg = "single" ]]
+        then
+            btn_txt="buttons {\"Next\"}"
+        else
+            btn_txt="buttons {\"Next\", \"$btnOff\"}"
+    fi
+
+
+    # res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt default button \"Next\"")
+    res=$(osascript -e "display dialog \"img nav\" with title \"Code Repent Gradient\" $btn_txt default button \"Next\"")
+
+    parseBtnAns "$res"
+    showImg 
+}
 
 apple_dialog_show(){
     # closePreview
@@ -127,7 +161,7 @@ apple_dialog_show(){
     # res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt default button \"Next\"")
     res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt default button \"Next\"")
 
-    parseBtnAns $res
+    parseBtnAns "$res"
     showImg 
 }
 
@@ -144,7 +178,7 @@ parseBtnAns(){
     do
         log "[parseBtnAns] : arg array element : $a"
 
-        if [ ${a} = "Submit To God" -o ${a} = "Next" -o ${a} = "Back" -o ${a} = "tgg" ]
+        if [ ${a} = "Submit To God" -o ${a} = "Next" -o ${a} = "Back" -o ${a} = "tgg" -o ${a} = "$btnImg"  -o ${a} = "$btnSlt" -o ${a} = "$btnOff" ]
         then
             ans=${a}
             log "[parseBtnAns] : ----------button answer is $ans----------"
@@ -190,9 +224,33 @@ record(){
 startValueReminder
 
 
+
+startImgNav(){
+    for i in {1..5}
+    do
+        imgNav "single"
+    done
+    while [ "$ans" != "$btnOff" ]
+    do
+        imgNav
+    done
+}
+
+
 startValueReminder(){
     updateImgList
     log "[startValueReminder] ${numV} verses exist."
+
+
+    modeSelection
+
+    if [ "$ans" != "$btnSlt" ]
+    then
+        startImgNav;
+        closePreview
+        exit 0
+
+    fi
 
     IFS=$'\n'
 
