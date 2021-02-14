@@ -95,7 +95,7 @@ textBtns=$(createBtns "btnArrText")
 apple_dialog_text(){
     log "[apple_dialog_text input]----------------------------------------:\n$1\n----------------------------------------\n"
     textBtns="buttons {\"Next\",\"Back\", \"Submit To God\", \"tgg\"}"
-    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Back\", \"Submit To God\", \"tgg\"}  default answer \"\" default button \"$btnSubmit\"")
+    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Submit To God\", \"Back\",  \"tgg\"}  default answer \"\" default button \"$btnSubmit\"")
     # closePreview;
     parseBtnAns $res
     parseTxt $res
@@ -117,9 +117,9 @@ apple_dialog_show(){
     # do
         if [[ ! -z $shw_arg ]] && [[ $shw_arg = "single" ]]
         then
-            btn_txt="buttons {\"tgg\", \"Next\"}"
+            btn_txt="buttons {\"Next\", \"tgg\"}"
         else
-            btn_txt="buttons {\"tgg\", \"Next\",\"Back\"}"
+            btn_txt="buttons {\"Next\",\"tgg\", \"Back\"}"
         fi
     # done
 
@@ -166,8 +166,8 @@ parseTxt(){
         log "[parseTxt] arg element : ${arg[i]}"
         if [ ${arg[i]} == " text returned" ]
         then
-            msg=${arg[(( $i+1 ))]}
-            log "[parseTxt] : txt is $msg"
+            userTxtMsg=${arg[(( $i+1 ))]}
+            log "[parseTxt] : txt is $userTxtMsg"
         fi
         
     done
@@ -243,7 +243,7 @@ Welcome Back to Code Repent Gradient!\n$warn" "single"
 
 REPEAT
 
-    # append time and msg
+    # append time and userTxtMsg
     record "\n\n\n\n\n\n\n$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y) "
 
 
@@ -354,7 +354,6 @@ REPEAT
 
     fi
 
-    local i
     for (( i=0; i<${#ruleArrR[@]}; i++ ))
     do
 
@@ -398,7 +397,7 @@ REPEAT
             log "[startValueReminder] current dialog pass stat : ------------------------false------------------------"
             apple_dialog_text "$contents"
             log "[startValueReminder] parsed button from user : $ans"
-            log "[startValueReminder] parsed answer from user : $msg"
+            log "[startValueReminder] parsed answer from user : $userTxtMsg"
 
             if [ "$ans" = "$btnBack" ]
             then
@@ -413,41 +412,34 @@ REPEAT
             then 
                 toggleImg
                 i=$(( i-1 ))
-            fi
+            fi     
 
-            # if [ ${limitArrR[$i]} = " " ]
-            # then
-            #     limit=0
-            # else
-            #     limit=${limitArrR[$i]}
-            # fi        
-
-            while [ \( "$correctRes" != " " -a "${msg^^}" != "${correctRes^^}" \) -o \( "$correctRes" = " " -a ${#msg} -lt ${limit} \) ]
-            # while [ "$ans" = "No" -o ${#msg} -lt ${limit} -o "$msg" != "$correctRes" ]
+            while [ \( "$correctRes" != " " -a "${userTxtMsg^^}" != "${correctRes^^}" \) -o \( "$correctRes" = " " -a ${#userTxtMsg} -lt ${limit} \) ]
+            # while [ "$ans" = "No" -o ${#userTxtMsg} -lt ${limit} -o "$userTxtMsg" != "$correctRes" ]
             do
                     alrt=""
-                    if [ "$correctRes" != " " -a "${msg^^}" != "${correctRes^^}" ]
+                    if [ "$correctRes" != " " -a "${userTxtMsg^^}" != "${correctRes^^}" ]
                     then
                         log "[startValueReminder] while loop stat : 글자가 틀렸다."
-                        log "[startValueReminder] while loop stat : 입력한 글자 : ${msg^^}"
+                        log "[startValueReminder] while loop stat : 입력한 글자 : ${userTxtMsg^^}"
                         log "[startValueReminder] while loop stat : 입력해야 하는 글자 : /$correctRes/"
-                        alrt="YOU ENTERED <$msg>\nPLEASE ENTER <$correctRes>.\n"
+                        alrt="YOU ENTERED <$userTxtMsg>\nPLEASE ENTER <$correctRes>.\n"
 
                         # log "[startValueReminder] while loop stat : false : $cond1"
                     # fi
-                    elif [ "$correctRes" = " " -a ${#msg} -lt ${limit} ]
+                    elif [ "$correctRes" = " " -a ${#userTxtMsg} -lt ${limit} ]
                     then
                         log "[startValueReminder] while loop stat : 글자 수 미달"
-                        log "[startValueReminder] while loop stat : ${#msg}"
+                        log "[startValueReminder] while loop stat : ${#userTxtMsg}"
                         log "[startValueReminder] while loop stat : ${limit}"
                         log "[startValueReminder] while loop stat : false : $cond2"
-                        alrt="YOU ENTERED <$msg>\nPLEASE ENTER MORE THAN $limit CHARS.\n"
+                        alrt="YOU ENTERED <$userTxtMsg>\nPLEASE ENTER MORE THAN $limit CHARS.\n"
                     fi
                     ans=""
-                    msg=""
+                    userTxtMsg=""
 
 
-                    # alertUpdate $msg $limit
+                    # alertUpdate $userTxtMsg $limit
                     apple_dialog_text "${alrt}${warn}${ruleArrR[${i}]}\n\nType$correctRes"
                     if [ "$ans" = "$btnBack" ]
                     then
@@ -473,12 +465,12 @@ REPEAT
                 completeArrR[$i]="true"
                 log "[startValueReminder] current dialog stat : ------------------------complete ${i}!------------------------"
                 log "[startValueReminder] dialog stat update: ${completeArrR[@]}"
-                msgArrR[$i]=$msg
+                msgArrR[$i]=$userTxtMsg
             fi
 
             # if [ -z $debug ]
             # then
-            record $msg
+            record $userTxtMsg
             # fi
         else # if already submit answers to God.
             log "[startValueReminder] current dialog stat : ------------------------true : show mode------------------------"
@@ -515,8 +507,8 @@ REPEAT
 
 
 
-    # cond1="$correctRes" != " " -a "${msg^^}" != "$correctRes"
-    # cond2="$correctRes" = " " -a ${#msg} -lt ${limit}
+    # cond1="$correctRes" != " " -a "${userTxtMsg^^}" != "$correctRes"
+    # cond2="$correctRes" = " " -a ${#userTxtMsg} -lt ${limit}
 
 
     done
@@ -527,7 +519,7 @@ REPEAT
 
 
 
-    # record "ARE YOU OBSESSED? ${msg}"
+    # record "ARE YOU OBSESSED? ${userTxtMsg}"
 
     # local pids=$(pgrep Preview)
 
