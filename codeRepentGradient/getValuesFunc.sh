@@ -1,5 +1,6 @@
 source ./log.sh
 # export LANG="ko_KR.UTF-8" #없으면 간혹 sed: RE error: illegal byte sequence 무한반복?
+export LC_ALL=C.UTF-8
 
 SPLIT_BASE_LEN=1000
 # READ_BASE_LEN=$(( $SPLIT_BASE_LEN / 10 ))
@@ -102,13 +103,24 @@ cleanseStr(){
 
         # #     # https://stackoverflow.com/questions/11287564/getting-sed-error-illegal-byte-sequence-in-bash
             str_ref=$(echo -e "$str_ref" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' 2>/dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+
+        log "[cleanseStr] : remove end newlines done : |$str_ref|"
+
+    local getCurReadArrIdx="$(getCurReadArrIdx)"
+
+    if [[ $getCurReadArrIdx == $ans_idx ]]
+    then
             str_ref=$(echo -e "$str_ref" | sed -e 's/ *$//' 2>/dev/null)
-        #     # str=$(echo -e "$str_ref" | sed -e 's/ $//' 2> /dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+    fi
+
+
+            # str=$(echo -e "$str_ref" | sed -e 's/ $//' 2> /dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
             # str="${str%%" "}"
 
 
         # #     # str=$(LC_CTYPE=C echo -e "$str_ref" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba') # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
         # str=${str%% *}
+
         log  "[cleanseStr] : final string : |$str_ref|"
 
 
@@ -123,8 +135,8 @@ saveStrCollectionToCurStageArr(){
     # 그 arr에 현재까지 내용을 넣는다.
     # priorIFS=$IFS
     # IFS=$origin_IFS
-    local getCurReadArrIdx="$(getCurReadArrIdx)"
     local str="$getStrCollection"
+    local getCurReadArrIdx="$(getCurReadArrIdx)"
     cleanseStr "str"
 
     local curArr=${allArr[$getCurReadArrIdx]}
@@ -359,6 +371,16 @@ configLineAndInitNewStage(){
 
         # echo ${#ruleArr[@]}
         uniqueRuleIdxArr+=($((${#ruleArr[@]})))
+        log "-----------------------------------------NEW STAGE START : $RULE_NUM----------------------------------------------"
+        log "o                                                                                                                o"
+        log "o                                                                                                                o"
+        log "o                                                                                                                o"
+        log "o                                                                                                                o"
+        log "o                                                                                                                o"
+        log "o                                                                                                                o"
+        log "o                                                                                                                o"
+        log "o                                                                                                                o"
+        log "------------------------------------------------------------------------------------------------------------------"
 
     else
         if [[ $line_ref == *"cont : "* ]]
