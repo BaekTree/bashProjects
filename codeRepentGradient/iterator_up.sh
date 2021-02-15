@@ -77,7 +77,7 @@ do
             echo leftOver : $leftOver limitT : $limitT
             sleep $leftOver
             echo ${arr[$i]} mins left.
-            (osascript -e "display notification \"${arr[$i]} mins left\" with title \"Code Repent Gradient\" subtitle \"glob arg max U s.t. U(G)\" sound name \"Frog\"")
+            (osascript -e "display notification \"${arr[$i]} mins left\" with title \"Code Repent Gradient\" subtitle \"glob arg max U s.t. U(G)\" ")
 
             limitT=$(( $limitT - $leftOver ))
         fi
@@ -93,7 +93,7 @@ do
             leftOver=$(( $limitT - ${arr[$i]} ))
             sleep $leftOver
             echo ${arr[$i]} secs left.
-            (osascript -e "display notification \"${arr[$i]} secs left\" with title \"Code Repent Gradient\" subtitle \"glob arg max U s.t. U(G)\" sound name \"Frog\"")
+            (osascript -e "display notification \"${arr[$i]} secs left\" with title \"Code Repent Gradient\" subtitle \"glob arg max U s.t. U(G)\" ")
             limitT=$(( $limitT - $leftOver ))
         fi
     done   
