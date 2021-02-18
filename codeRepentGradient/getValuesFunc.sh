@@ -1,4 +1,10 @@
 source ./log.sh
+# export LANG="ko_KR.UTF-8" #없으면 간혹 sed: RE error: illegal byte sequence 무한반복?
+export LC_ALL=C.UTF-8
+
+SPLIT_BASE_LEN=1000
+# READ_BASE_LEN=$(( $SPLIT_BASE_LEN / 10 ))
+READ_BASE_LEN=$SPLIT_BASE_LEN
 
 SPLIT_BASE_LEN=1000
 
@@ -85,90 +91,45 @@ isLargeStr(){
     fi
 }
 
-cleanseStrAndStore(){
-    local str="$1"
-    local curArr="$2"
-    log "[cleanseStrAndStore] : curArr : |$curArr|"
-
-
-    declare -n refArr=$curArr
-    log "[cleanseStrAndStore] : original : |$str|"
-   
-   
-    # local -n refArr="$2"
-    # local str="$1"
-    # local refArr="$2"
-    if [[ ! -z $str ]]
+cleanseStr(){
+    local -n str_ref="$1"
+    if [[ ! -z $str_ref ]]
     then
-    # #     # {
-    # #         # echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' >> /dev/null
-    # #     # } || {
-    # #     #     echo "iconv fail"
-    # #     #     echo "$str"
-    # #     # }
+        log "[cleanseStr] : original : |$str_ref|"
+        # #     # {
+        # #         # echo -e "$str_ref" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' >> /dev/null
+        # #     # } || {
+        # #     #     echo "iconv fail"
+        # #     #     echo "$str_ref"
+        # #     # }
 
-    # #     # https://stackoverflow.com/questions/11287564/getting-sed-error-illegal-byte-sequence-in-bash
-        str=$(echo -e "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' 2>/dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
-        str=$(echo -e "$str" | sed -e 's/ *$//' 2>/dev/null)
-    #     # str=$(echo -e "$str" | sed -e 's/ $//' 2> /dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
-        # str="${str%%" "}"
+        # #     # https://stackoverflow.com/questions/11287564/getting-sed-error-illegal-byte-sequence-in-bash
+            str_ref=$(echo -e "$str_ref" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' 2>/dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
 
+        log "[cleanseStr] : remove end newlines done : |$str_ref|"
 
-    # #     # str=$(LC_CTYPE=C echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba') # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
-    
+    local getCurReadArrIdx="$(getCurReadArrIdx)"
+
+    if [[ $getCurReadArrIdx == $ans_idx ]]
+    then
+            str_ref=$(echo -e "$str_ref" | sed -e 's/ *$//' 2>/dev/null)
     fi
-    # str=${str%% *}
-    log "[cleanseStrAndStore] : final string : |$str|"
-    log "[cleanseStrAndStore] : arr : |${refArr[*]}|"
-    refArr+=("$str")
-    log "[cleanseStrAndStore] : array append result : |${refArr[*]}|"
-}
-
-splitLargeStrAndStore(){
-    local str="$1"
-    local curArr="$2"
-    while [ $(( ${#str} / $SPLIT_BASE_LEN )) -gt  0 ]
-    do
-        # echo $(( ${#str} / $SPLIT_BASE_LEN ))
-        log "[target] : |$str|"
-        # 구원자!!
-        # https://forum.ubuntu-kr.org/viewtopic.php?t=25616
-        frontSeg="$(echo $str | cut -b -$SPLIT_BASE_LEN | iconv 2>/dev/null)"
-        # frontSeg="$(echo $str | cut -b -$SPLIT_BASE_LEN)"
-
-        # frontSeg="${str:0:$SPLIT_BASE_LEN}"
-        log "[frontSeg] : |$frontSeg|"
-        endSeg="${str#"$frontSeg"}"
-        # endSeg="${str#$frontSeg}" # 제대로 잘라내지 못한다. 중간에 껴있는 space나 개행 때문에 통으로 인식하지 못한다. 숫자는 {}을 붙이고 문자는 ""을 붙여라!
-        log "[endSeg] : |$endSeg|"
-        # exit 0
-        ### 
-        # endSeg=${str:$SPLIT_BASE_LEN} # $SPLIT_BASE_LEN자부터 끝까지. 뒷부분이 된다.
 
 
+            # str=$(echo -e "$str_ref" | sed -e 's/ $//' 2> /dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+            # str="${str%%" "}"
 
-        # frontSeg=${str%$endSeg}
-        log "[splitLargeStrAndStore] : cut $SPLIT_BASE_LEN chars : |$frontSeg|"
 
-        cleanseStrAndStore "$frontSeg" "$curArr"
+        # #     # str=$(LC_CTYPE=C echo -e "$str_ref" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba') # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+        # str=${str%% *}
 
-        # cleanStr=$(echo -e "$frontSeg" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+        log  "[cleanseStr] : final string : |$str_ref|"
+
+
+        # str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
         # # str=${str%% *}
-        # log "[splitLargeStrAndStore] :cleanStr: |$cleanStr|"
-
-        
-        local curReadStage="$(getCurReadStage)"
-
-        fillMissingArrayFromTo $(( curReadStage+1 )) $lenAllArr
-        last_rule=${ruleArr[-1]}
-        ruleArr+=($last_rule)
-
-
-
-        str="$endSeg"
-    done
-    cleanseStrAndStore "$str" "$curArr"
-
+        # log "[saveStrCollectionToCurStageArr] : |$str|"
+    fi
 }
 
 saveStrCollectionToCurStageArr(){
@@ -176,10 +137,12 @@ saveStrCollectionToCurStageArr(){
     # 그 arr에 현재까지 내용을 넣는다.
     # priorIFS=$IFS
     # IFS=$origin_IFS
+    local str="$getStrCollection"
     local getCurReadArrIdx="$(getCurReadArrIdx)"
-    local str="$1"
+    cleanseStr "str"
+
     local curArr=${allArr[$getCurReadArrIdx]}
-    log "\n[saveStrCollectionToCurStageArr]-------------------------------------------|"
+    log "[saveStrCollectionToCurStageArr]--------------------------------------|"
     log "                                                                      |"
     log "[saveStrCollectionToCurStageArr] : current array index: $curArr"
     # log "[saveStrCollectionToCurStageArr] : $str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
@@ -192,22 +155,28 @@ saveStrCollectionToCurStageArr(){
     # # str=${str%% *}
     log "[saveStrCollectionToCurStageArr] : str : |$str|"
     # 기존 arr의 누적해왔던 값을 기존 arr에 쓴다.
-    # SPLIT_BASE_LEN=500
+    # SPLIT_BASE_LEN=$SPLIT_BASE_LEN
 
     # echo "$str"
     # echo "${#str}"
 
-    if isLargeStr "$str";
-    then
-        # echo $(( ${#str} / $SPLIT_BASE_LEN ))
-        splitLargeStrAndStore "$str" "$curArr"
-    else
-        cleanseStrAndStore "$str" "$curArr"
-    fi
+# if isLargeStr "$str";
+    # then
+#         # echo $(( ${#str} / $SPLIT_BASE_LEN ))
+        # splitLargeStrAndStore "$str" "$curArr"
+# else
+    # cleanseStrAndStore "$str" "$curArr"
+# fi
+    
+    log "[saveStrCollectionToCurStageArr] : curArr : |$curArr|"
 
-    # str=$(echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
-    # # str=${str%% *}
-    # log "[saveStrCollectionToCurStageArr] : |$str|"
+    declare -n refArr=$curArr
+    
+
+   
+    log "[saveStrCollectionToCurStageArr] : arr : |${refArr[*]}|"
+    refArr+=("$str")
+    # log "[saveStrCollectionToCurStageArr] : array append result : |${refArr[*]}|"
     # refArr+=("$str")
 
 
@@ -312,6 +281,7 @@ isLineTransToNextStage(){
 
 
 isValidLine(){
+    # local strCollection="$getStrCollection"
     local strCollection="$1"
     if [[ ! -z $strCollection ]] || [[ "$strCollection" != "" ]]
     then
@@ -327,13 +297,22 @@ clearStrCollection(){
     STR_COLLECTION=""
 }
 
-getStrCollection(){
-    echo "$STR_COLLECTION"
-}
+# getStrCollection(){
+#     printf "$STR_COLLECTION"
+# }
+# subshell으로 strCollection을 불러오면... 한글이라서 그런지 내용이 길어서 그런지 간간히... 예측할 수 없이... 꼭 몇글자만... 깨져서 반환된다.
+# 뭐가 유발하는지 모르겠음. 동일한 조건에서 여러번 반복해서 실행하면 간혹... 이 현상이 나타남.
+# 같은 자리에서 나올 때까지 50번 하면 1번 나올 때도 있고, 갑자기 3번 연속으로 나올 때도 있음...
+# global 을 안쓰려고 했으나 어쩔 수가 없음...
+# 그래서 그냥 함수 모양의 name ref을 사용해서...
+
+declare -n getStrCollection=STR_COLLECTION
 
 appendStrCollection(){
     local s="$1"
+    log "new string : $1"
     STR_COLLECTION+="$s"
+    log "total string : $STR_COLLECTION"
 }
 
 checkMissingStageAndFillArr(){
@@ -394,6 +373,16 @@ configLineAndInitNewStage(){
 
         # echo ${#ruleArr[@]}
         uniqueRuleIdxArr+=($((${#ruleArr[@]})))
+        log "-----------------------------------------NEW STAGE START : $RULE_NUM----------------------------------------------"
+        log "o                                                                                                                o"
+        log "o                                                                                                                o"
+        log "o                                                                                                                o"
+        log "o                                                                                                                o"
+        log "o                                                                                                                o"
+        log "o                                                                                                                o"
+        log "o                                                                                                                o"
+        log "o                                                                                                                o"
+        log "------------------------------------------------------------------------------------------------------------------"
 
     else
         if [[ $line_ref == *"cont : "* ]]
@@ -416,20 +405,15 @@ configLineAndInitNewStage(){
 
 }
 
-finishOneStage(){
-    local strCollection="$(getStrCollection)"
-    if isValidLine "$strCollection";#invalid when first line of txt. strCollection contains nothing, so empty string is put to ruleArr.
-    then
-        saveStrCollectionToCurStageArr "$strCollection"
-    fi
-}
+
 
 appendCurLineToStrCollection(){
     local line="$1"
     # log "[appendCurLineToStrCollection] priorAppendStr input : $priorAppendStr"
 
         
-
+    # echo "result : |$line|"
+    # echo "$line"
         # rule으로 시작하고, 방금 줄은 str에 입력했으니 이제 계속 누적을 하고, rule이 아닌 줄을 만났을 때 ruleArr에 넣는다!
         # return
 
@@ -439,15 +423,53 @@ appendCurLineToStrCollection(){
     # sed을 사용 : s/*\n$//이 잘 안된다. sed는 개행을 기준으로 해서. 그래서... sed를 더 깊게... ba 사용.
     log "[appendCurLineToStrCollection] : running append"
 
+    local strClt="$getStrCollection"
 
+    local lenStrClt=${#strClt}
+    # echo $lenStrClt
+    local lenLine=${#line}
+    # echo $lenLine
+    local sum=$(( $lenStrClt + $lenLine ))
+
+    if [ $sum -gt $SPLIT_BASE_LEN ]
+    then
+        # echo overflow!
+        # echo "sum : $sum"
+        # echo "strCollction : $lenStrClt"
+        # echo "line : $lenLine"
+        saveStrCollectionToCurStageArr
+
+
+        # updateNextCurReadStage
+        local curReadStage="$(getCurReadStage)"
+        # echo "curReadStage : $curReadStage"
+        fillMissingArrayFromTo $(($curReadStage+1)) $lenAllArr
+        copyCurStageRuleArr
+    fi
 
     #방금 읽은 줄을 priorAppendStr에 누적해서 추가!
-    appendStrCollection "$line\n"
+
+
+<< "newline"
+    500글자로 끊은 줄이라면
+        개행을 붙이면 안된다.
+    모든 string에서는 마지막에 붙은 개행을 빼야한다.
+    500글자로 끊은게 아니라면 개행을 붙여야 한다.
+
+    개행이 한줄짜리는 개행을 붙여야 한다.
+
+newline
+
+    # if [ ${#line} -lt $READ_BASE_LEN ]
+    # then
+    #     line="$line\n"
+    # fi
+    appendStrCollection "$line\n"    
 
 
 }
 
-logResultOption(){
+setZeroStageInDebugOption(){
 
     if [[ ! -z $debug ]] && [[ $debug = "-df" ]]
     then
@@ -472,9 +494,9 @@ logResultOption(){
 completeLastLine(){
 
     
-    local strCollection="$(getStrCollection)"
+    # local strCollection="$getStrCollection"
     log "[getRules] reading done. fill left over"
-    saveStrCollectionToCurStageArr "$strCollection"
+    saveStrCollectionToCurStageArr
 
     # 마지막 오브 마지막 limit은 다른 arr을 만나지 않는다. 마지막 줄 str을 저장해준다.
     # 새로운 arr을 만나야 업데이트를 해준다. 그런데 만나지 못하고 읽기가 끝나서 업데이트를 수동으로 해줘야 한다.
@@ -484,30 +506,26 @@ completeLastLine(){
 }
 
 
-copyRuleForNextPrgp(){
+copyCurStageRuleArr(){
 
         last_rule=${ruleArr[-1]}
-        
-        ## 만약 여러 개행으로 하나의 rule+cont+ans+limit이 끝난다면? 그대로 이어서는 안된다. 새로 추가하도록 내버려 둬야 한다.
-        if [[ $line != *"rule : "* ]]
-        then
-            ruleArr+=($last_rule)
-        fi
+        ruleArr+=($last_rule)
 }
 
 
 
 savePrghAndClearStrCollection(){
     
-    local line="$1"
-    if ! isLineTransToNextStage "line";
-    then
+    # local line="$1"
+    # if ! isLineTransToNextStage "line";
+    # then
         log "[savePrghAndClearStrCollection] : not transition to new arr."
-        finishOneStage
-        copyRuleForNextPrgp
+        saveStrCollectionToCurStageArr
+        copyCurStageRuleArr
+        
         local curReadStage="$(getCurReadStage)"
         fillMissingArrayFromTo $(( curReadStage+1 )) $lenAllArr
-    fi
+    # fi
     # else, just move the next stage!
     # 새로운 단락을 판단하는 기준은 여러 줄의 개행이 연속되어 나오다가 개행이 아닌 줄을 만났을 때이다.
     # 새로 만난 줄이 새로운 단계라면 그냥 그대로 새로운 단계를 시작하면 된다.
@@ -535,8 +553,8 @@ isMeetContinuousNewline(){
 
 
 isLineParagraph(){
-    local line="$1"
-    if isMeetNewline "$line";
+    local -n line_ref="$1"
+    if isMeetNewline "$line_ref";
     then
             NEW_LINE_COUNT=$(( NEW_LINE_COUNT + 1))
             log "[isLineParagraph] : NEW_LINE_COUNT : meet new line: $NEW_LINE_COUNT"
@@ -545,15 +563,20 @@ isLineParagraph(){
         if [ $NEW_LINE_COUNT -eq 1 ] # 한줄의 개행을 만나다가 개행이 아닌 줄을 만났을 때
         then
             NEW_LINE_COUNT=0
+            # line_ref+="\n"
             return 1
-        elif [ $NEW_LINE_COUNT -gt 1 ] # 연속된 개행이 쌓이다가 개행이 아닌 줄을 만났을 때
+        elif [[ $NEW_LINE_COUNT -gt 1 ]] &&  ! isLineTransToNextStage "line"; # 연속된 개행이 쌓이다가 개행이 아닌 줄을 만났을 때
         then
-            log "[isLineParagraph] : face a paragraph : detected continuous newlines : $NEW_LINE_COUNT"
+            log "[isLineParagraph] : face a paragraph : detected continuous newlines : $NEW_LINE_COUNT and next line is not new stage" 
             NEW_LINE_COUNT=0
             return 0
-        else # multiple continuous newlines : middle of checking paragraph
+        else # 연속되지도 않은 그냥 일반적인 줄. 
+            # 혹은 1줄 보다 큰데 다음 stage을 만난 줄. 이 경우 연속된 줄 초기화를 해줘야 한다.
+            NEW_LINE_COUNT=0  
             return 1
         fi
+
+
     fi
 }
 saveStrCollectionAndStartNewStage(){
@@ -562,8 +585,12 @@ saveStrCollectionAndStartNewStage(){
     # 그 arr에 현재까지 내용을 넣는다.
     log "[saveStrCollectionAndStartNewStage] : face new stage : pause : line until flush the strCollection"
     
-    finishOneStage
-
+    local strCollection="$getStrCollection"
+    #invalid when first line of txt. strCollection contains nothing, so empty string is put to ruleArr.
+    if isValidLine "$strCollection";
+    then
+        saveStrCollectionToCurStageArr
+    fi
     updateNextCurReadStage
     configLineAndInitNewStage "line"
 }
@@ -578,26 +605,32 @@ getRules(){
     # c 기준으로 텍스트는 개행문자로 끝이 나야 한다. 그게 아니면 에러를 발생시키고 마지막 while을 실행하지 않는다.
     # https://stackoverflow.com/questions/12916352/shell-script-read-missing-last-line
     # 보장하기 위해서 마지막 줄을 읽는 명령어를 추가.
-    while read -r line || [ -n "$line" ]; do
+
+
+    while read -rn$READ_BASE_LEN line || [ -n "$line" ]; do
 
     # while read -r line
     # do
 
         log "[getRules] read and acummulate : $line"
-        if isLineParagraph "$line";
+        if isLineParagraph "line";
         then
-            savePrghAndClearStrCollection "$line"
+            savePrghAndClearStrCollection
         fi
+
         
+        if  isLineTransToNextStage "line";
+        then    
+           saveStrCollectionAndStartNewStage
+        fi
+
         if isMeetContinuousNewline;
         then
             continue
         fi
         
-        if isLineTransToNextStage "line";
-        then    
-           saveStrCollectionAndStartNewStage
-        fi
+
+
         
         appendCurLineToStrCollection "$line"
 
@@ -608,9 +641,98 @@ getRules(){
     # 따라서 명시적으로 다시 저장해주어야 한다.
     completeLastLine
     
-    logResultOption
+    setZeroStageInDebugOption
 
     IFS=$priorIFS
 
 
 }
+
+
+
+# cleanseStrAndStore(){
+#     local str="$1"
+#     local curArr="$2"
+#     log "[cleanseStrAndStore] : curArr : |$curArr|"
+
+
+#     declare -n refArr=$curArr
+#     log "[cleanseStrAndStore] : original : |$str|"
+   
+   
+#     # local -n refArr="$2"
+#     # local str="$1"
+#     # local refArr="$2"
+#     if [[ ! -z $str ]]
+#     then
+#     # #     # {
+#     # #         # echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' >> /dev/null
+#     # #     # } || {
+#     # #     #     echo "iconv fail"
+#     # #     #     echo "$str"
+#     # #     # }
+
+#     # #     # https://stackoverflow.com/questions/11287564/getting-sed-error-illegal-byte-sequence-in-bash
+#         str=$(echo -e "$str" | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba' 2>/dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+#         str=$(echo -e "$str" | sed -e 's/ *$//' 2>/dev/null)
+#     #     # str=$(echo -e "$str" | sed -e 's/ $//' 2> /dev/null) # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+#         # str="${str%%" "}"
+
+
+#     # #     # str=$(LC_CTYPE=C echo -e "$str" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba') # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+    
+#     fi
+#     # str=${str%% *}
+#     log "[cleanseStrAndStore] : final string : |$str|"
+#     log "[cleanseStrAndStore] : arr : |${refArr[*]}|"
+#     refArr+=("$str")
+#     log "[cleanseStrAndStore] : array append result : |${refArr[*]}|"
+# }
+
+# splitLargeStrAndStore(){
+#     local str="$1"
+#     local curArr="$2"
+#     while [ $(( ${#str} / $SPLIT_BASE_LEN )) -gt  0 ]
+#     do
+#         # echo $(( ${#str} / $SPLIT_BASE_LEN ))
+#         log "[target] : |$str|"
+#         # 구원자!!
+#         # https://forum.ubuntu-kr.org/viewtopic.php?t=25616
+#         # frontSeg="$(echo $str | cut -b -$SPLIT_BASE_LEN | iconv 2>/dev/null)"
+#         frontSeg="$(echo $str | cut -b -$SPLIT_BASE_LEN)"
+
+#         # frontSeg="${str:0:$SPLIT_BASE_LEN}"
+#         log "[frontSeg] : |$frontSeg|"
+#         endSeg="${str#"$frontSeg"}"
+#         # endSeg="${str#$frontSeg}" # 제대로 잘라내지 못한다. 중간에 껴있는 space나 개행 때문에 통으로 인식하지 못한다. 숫자는 {}을 붙이고 문자는 ""을 붙여라!
+#         log "[endSeg] : |$endSeg|"
+#         # exit 0
+#         ### 
+#         # endSeg=${str:$SPLIT_BASE_LEN} # $SPLIT_BASE_LEN자부터 끝까지. 뒷부분이 된다.
+
+
+
+#         # frontSeg=${str%$endSeg}
+#         log "[splitLargeStrAndStore] : cut $SPLIT_BASE_LEN chars : |$frontSeg|"
+
+#         cleanseStrAndStore "$frontSeg" "$curArr"
+
+#         # cleanStr=$(echo -e "$frontSeg" | iconv -f UTF-8 | sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'); # 이렇게 하면 간혹 잘려서... dialog에서 화면이 깨진다. 
+#         # # str=${str%% *}
+#         # log "[splitLargeStrAndStore] :cleanStr: |$cleanStr|"
+
+        
+#         local curReadStage="$(getCurReadStage)"
+
+#         fillMissingArrayFromTo $(( curReadStage+1 )) $lenAllArr
+
+#         copyCurStageRuleArr
+
+
+
+
+#         str="$endSeg"
+#     done
+#     cleanseStrAndStore "$str" "$curArr"
+
+# }

@@ -5,54 +5,7 @@
 
 
 source dir.sh
-printUsage(){
-    local name="$1"
-    echo "usage : ./$name.sh"
-    echo "option : \n\t -d\n\t -f\n\t -l"
-    echo "option -d : "
-    echo "\t -d getRules : run only getRules function."
-    echo "\t -d all : run getRules and startValueReminder, but not call hideAll and wait functions."
-    echo "option -df : erase all limit and ans "
-    echo "option -f : "
-    echo "\t -f rules.txt : specific file data in data directory."
-    echo "option -l : enable log."
-}
-
-parseArg(){
-    local args=("$@")
-    local name="${args[0]}"
-
-    # local -n debug
-    # local -n dFunc
-    # local -n arg_file
-    # local -n dFile
-    # local -n log
-
-    local tmp_i
-    for (( t_arg_i=1; t_arg_i < ${#args[@]}; t_arg_i++ ))
-    do
-    if [[ ${args[$t_arg_i]} = "-d" ]] || [[ ${args[$t_arg_i]} = "-df" ]]
-        then
-            debug=${args[$t_arg_i]}
-            tmp_i=$(( $t_arg_i + 1 ))
-            dFunc=${args[$tmp_i]}
-            (( t_arg_i++ ))
-        elif [[ ${args[$t_arg_i]} = "-f" ]]
-        then
-            arg_file=${args[$t_arg_i]}
-            tmp_i=$(( $t_arg_i + 1 ))
-            dFile=${args[$tmp_i]}
-            (( t_arg_i++ ))
-        elif [[ ${args[$t_arg_i]} = "-l" ]]
-        then
-            log=${args[$t_arg_i]}
-        else
-            echo "You entered <${args[$t_arg_i]}>. What did you mean?"
-            printUsage "$name"
-            exit 0
-        fi
-    done
-}
+source parseArg.sh
 
 scrpt_name=$0
 
@@ -80,20 +33,7 @@ source $DIR/function_up.sh
 
 
 
-if [ $arg_file = "-f" -a ! -z $dFile ]
-then
-    dir_chk=$(ls $DATA_DIR/$dFile)
-    if [ "$dir_chk" != "$DATA_DIR/$dFile" ]
-    then
-        echo -e "no file exists named $DATA_DIR/$dFile" 
-        exit 0
-    fi
-    file="$DATA_DIR/$dFile"
-else
-    printUsage
-    exit 0
-fi
-    
+
 
 declare -a ruleArr=()
 declare -a contArr=()
@@ -132,6 +72,7 @@ else # debug 일때
     then
         echo "run only getRules"
         getRules
+        # printArrs
     else
         printUsage
     fi

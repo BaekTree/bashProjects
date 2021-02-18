@@ -45,16 +45,102 @@ apple_dialog(){
     fi
 }
 
-apple_dialog_text(){
-    log "[apple_dialog_text input]----------------------------------------:\n$1\n----------------------------------------\n"
-    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Submit To God\", \"Back\"} default answer \"\" default button \"Submit To God\"")
-    # closePreview;
-    parseBtnAns $res
-    parseTxt $res
-    showImg &
+# flexible btns
+btnNext="Next"
+btnSubmit="Submit To God"
+btnBack="Back"
+btnImg="Img"
+btnTgg="tgg"
+btnOff="Off"
+btnSlt="txtWimg"
+
+
+declare -a btnArrText=("$btnSubmit" "$btnBack" "$btnTgg"  )
+declare -a btnArrShow=("$btnNext" "$btnBack")
+
+declare -a btnArr=("$btnSubmit" "$btnBack" "$btnTgg" "$btnNext" )
+# addBtn(){
+#     local str="$1"
+#     btnArrText+=("$str")
+
+
+# }
+
+createBtns(){
+    local -n btnArr="$1"
+    # btnArr=($btnArr)
+    # echo "create"
+    echo "${btnArr[@]}"
+    # echo "${#btnArr[@]}"
+
+    local btns="buttons {"
+    for (( b_i=0; b_i<$(( ${#btnArr[@]} - 1 )); b_i++ ))
+    do  
+        echo "$b_i : ${btnArr[$b_i]}"
+        btns+="\""${btnArr[$b_i]}"\", "
+    done
+    btns+="\""${btnArr[$(( ${#btnArr[@]} - 1 ))]}"\"}"
+    
+    echo "$btns"
 
 }
 
+chckBtn(){
+    local str="$1"
+}
+
+# addBtn "$btnSubmit"
+# addBtn "$btnBack"
+# addBtn "$btnTgg"
+# createBtns "${btnArrText[*]}"
+textBtns=$(createBtns "btnArrText")
+
+apple_dialog_text(){
+    log "[apple_dialog_text input]----------------------------------------:\n$1\n----------------------------------------\n"
+    textBtns="buttons {\"Next\",\"Back\", \"Submit To God\", \"tgg\"}"
+    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" buttons {\"Submit To God\", \"Back\",  \"tgg\"}  default answer \"\" default button \"$btnSubmit\"")
+    # closePreview;
+    parseBtnAns $res
+    parseTxt $res
+    showImg 
+
+}
+
+
+
+modeSelection(){
+
+
+    local btn_txt="buttons {\"txtWimg\", \"Img\"}"
+
+
+
+
+
+    # res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt default button \"Next\"")
+    res=$(osascript -e "display dialog \"mode selection\" with title \"Code Repent Gradient\" $btn_txt ")
+
+    parseBtnAns "$res"   
+}
+
+
+imgNav(){
+    local btn_txt
+    local shw_arg=$1
+    if [[ ! -z $shw_arg ]] && [[ $shw_arg = "single" ]]
+        then
+            btn_txt="buttons {\"Next\"}"
+        else
+            btn_txt="buttons {\"Next\", \"$btnOff\"}"
+    fi
+
+
+    # res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt default button \"Next\"")
+    res=$(osascript -e "display dialog \"img nav\" with title \"Code Repent Gradient\" $btn_txt default button \"Next\"")
+
+    parseBtnAns "$res"
+    showImg 
+}
 
 apple_dialog_show(){
     # closePreview
@@ -65,18 +151,18 @@ apple_dialog_show(){
     # do
         if [[ ! -z $shw_arg ]] && [[ $shw_arg = "single" ]]
         then
-            btn_txt="buttons {\"Next\"}"
+            btn_txt="buttons {\"Next\", \"tgg\"}"
         else
-            btn_txt="buttons {\"Next\",\"Back\"}"
+            btn_txt="buttons {\"Next\",\"tgg\", \"Back\"}"
         fi
     # done
 
 
     # res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt default button \"Next\"")
-    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt")
+    res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt default button \"Next\"")
 
-    parseBtnAns $res
-    showImg &
+    parseBtnAns "$res"
+    showImg 
 }
 
 
@@ -85,17 +171,18 @@ parseBtnAns(){
     priorIFS=$IFS
     IFS=$":,"
     local arg=($1)
-    log "[parseBtnAns] ARG : ${arg[@]}"
+    log "[parseBtnAns] ARG : ${arg[*]}"
 
     local a
     for a in ${arg[@]}
     do
         log "[parseBtnAns] : arg array element : $a"
-        if [ ${a} = "Submit To God" -o ${a} = "Next" -o ${a} = "Back" ]
+
+        if [ ${a} = "Submit To God" -o ${a} = "Next" -o ${a} = "Back" -o ${a} = "tgg" -o ${a} = "$btnImg"  -o ${a} = "$btnSlt" -o ${a} = "$btnOff" ]
         then
             ans=${a}
             log "[parseBtnAns] : ----------button answer is $ans----------"
-        fi        
+        fi 
     done
     IFS=$priorIFS
 }
@@ -113,8 +200,8 @@ parseTxt(){
         log "[parseTxt] arg element : ${arg[i]}"
         if [ ${arg[i]} == " text returned" ]
         then
-            msg=${arg[(( $i+1 ))]}
-            log "[parseTxt] : txt is $msg"
+            userTxtMsg=${arg[(( $i+1 ))]}
+            log "[parseTxt] : txt is $userTxtMsg"
         fi
         
     done
@@ -137,9 +224,49 @@ record(){
 startValueReminder
 
 
+
+startImgNav(){
+    for i in {1..5}
+    do
+        imgNav "single"
+    done
+    while [ "$ans" != "$btnOff" ]
+    do
+        imgNav
+    done
+}
+
+
 startValueReminder(){
     updateImgList
     log "[startValueReminder] ${numV} verses exist."
+
+<< "GATE"
+open the gate with a dialog
+GATE
+
+    apple_dialog_show "--------------------------------------------------------------
+Code Repent Gradient : 마음을 돌이켜 하나님에게로 돌아가자.
+
+Max glob arg_me U(G, me) s.t. U(me) <= U(G)
+
+하나님에게 돌아가는 시간.
+
+하나님에게로 돌아가 안식을 누리세요.
+
+하나님이 가장 중요해요.
+--------------------------------------------------------------
+Welcome Back to Code Repent Gradient!\n$warn" "single"
+
+    modeSelection
+
+    if [ "$ans" != "$btnSlt" ]
+    then
+        startImgNav;
+        closePreview
+        exit 0
+
+    fi
 
     IFS=$'\n'
 
@@ -168,81 +295,129 @@ startValueReminder(){
 
 
 
-<< "GATE"
-open the gate with a dialog
-GATE
 
-    apple_dialog_show "--------------------------------------------------------------
-Code Repent Gradient : 마음을 돌이켜 하나님에게로 돌아가자.
+    apple_dialog_show "$rules" "single"
+    # while [ "$ans" = "No" ]
+    # do
+    #     apple_dialog_show "${warn}\n\n${rules}" "single"
+    # done
 
-Max glob arg_me U(G, me) s.t. U(me) <= U(G)
---------------------------------------------------------------
-Welcome Back to Code Repent Gradient!\n$warn" "single"
-
-    apple_dialog_show $rules "single"
-    while [ "$ans" = "No" ]
-    do
-        apple_dialog_show "${warn}\n\n${rules}" "single"
-    done
-
-
+    # exit 0
 << "REPEAT"
 
 REPEAT
 
-    # append time and msg
+    # append time and userTxtMsg
     record "\n\n\n\n\n\n\n$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y) "
 
 
     log "[startValueReminder] the number of rules : ${#ruleArr[@]}"
     
-    
-    local -a ruleArrR=()
-    local -a contArrR=()
-    local -a ansArrR=()
-    local -a limitArrR=()
-    local -a completeArrR=()
-    local -a msgArrR=()
-    {
-            # local randRuleIdx=$(( $RANDOM % $ruleNum ))
-            # local i = ${uniqueRuleIdxArr[$randRuleIdx]}
-        local ruleNum=${#uniqueRuleIdxArr[@]}
-        local -a handler=(0 1 2)
-        local handle_i=0
-        
-        while [[ $handle_i < 3 ]]
-        do
-            local randRuleIdx=$(( $RANDOM % $(($ruleNum - 3)) ))
-            # echo $randRuleIdx
-            handler+=($(($randRuleIdx + 3)))
-            
 
-            # echo $idx
-            handle_i=$(( handle_i + 1 ))
-        done
+    if [[ ! -z $is_rnd_arg ]] && [[ $is_rnd_arg == "-r" ]]
+    then
+        {
+            local -a ruleArrR=()
+            local -a contArrR=()
+            local -a ansArrR=()
+            local -a limitArrR=()
+            local -a completeArrR=()
+            local -a msgArrR=()
+                # local randRuleIdx=$(( $RANDOM % $ruleNum ))
+                # local i = ${uniqueRuleIdxArr[$randRuleIdx]}
 
-        for (( handle_i=0; handle_i<${#handler[@]}; handle_i++ ))
-        do
-            local randRuleIdx=${handler[$handle_i]}
-            local start_idx=${uniqueRuleIdxArr[$randRuleIdx]}
-            local end_idx=${uniqueRuleIdxArr[$(($randRuleIdx+1))]}
-            local range=$(( $end_idx - $start_idx ))
+            local fixRuleNum=$rnd_first_arg
+            local numRandPick=$rnd_second_arg
 
-            for (( i=$start_idx; i<$end_idx; i++ ))
+
+            local ruleNum=${#uniqueRuleIdxArr[@]}
+            local -a selectedRuleArr=()
+            for (( s_i=0; s_i<$fixRuleNum; s_i++ ))
             do
-                # echo -e "${ruleArrR[$i]}"
-                ruleArrR+=("${ruleArr[$i]}")
-                contArrR+=("${contArr[$i]}")
-                ansArrR+=("${ansArr[$i]}")
-                limitArrR+=("${limitArr[$i]}")
-                completeArrR+=("${completeArr[$i]}")
-                msgArrR+=("${msgArr[$i]}")
+                selectedRuleArr+=(${s_i})
             done
-        done
-    }
 
 
-    local i
+            if [ $(( $fixRuleNum + $numRandPick )) -gt $ruleNum ]
+            then
+                echo "$(( $fixRuleNum + $numRandPick ))"
+                echo $ruleNum
+                echo "the number of first fixed value + the number of randomly picking values > the number of total values."
+                exit 0
+            fi
+
+            local select_i=0
+            
+            while [[ $select_i < $numRandPick ]]
+            do
+                local randRuleIdx=$(( $RANDOM % $(($ruleNum - $fixRuleNum)) ))
+                # echo $randRuleIdx
+                selectedRuleArr+=($(($randRuleIdx + $fixRuleNum)))
+                
+
+                # echo $idx
+                select_i=$(( select_i + 1 ))
+            done
+
+            # for (( s_i=0; s_i<${#uniqueRuleIdxArr[@]}; s_i++ ))
+            # do
+            #     echo ${uniqueRuleIdxArr[$s_i]}
+            # done
+
+            # selectedRuleArr+=($(( ${#uniqueRuleIdxArr[@]} - 1 )))
+            # echo "uniqueRuleIdxArr의 마지막 값 : ${uniqueRuleIdxArr[$(( ${#uniqueRuleIdxArr[@]} - 1 ))]}"
+            # echo 
+
+            for (( select_i=0; select_i<${#selectedRuleArr[@]}; select_i++ ))
+            do
+                local uniqRuleIdx=${selectedRuleArr[$select_i]}
+                local start_idx=${uniqueRuleIdxArr[$uniqRuleIdx]}
+                local end_idx=${uniqueRuleIdxArr[$(($uniqRuleIdx+1))]}
+                    # echo "uniq rule idx : $uniqRuleIdx"
+                    # echo "start idx : $start_idx"
+                    # echo "end idx : $end_idx"
+                if [ $start_idx -eq ${uniqueRuleIdxArr[$(( ${#uniqueRuleIdxArr[@]} - 1 ))]} ]
+                then
+                    end_idx=$(( ${#ruleArr[@]} - 1 ))
+                    # echo $start_idx
+                    # echo $end_idx
+                    # exit 0
+
+
+                fi
+                # 전체 ruleArr의 마지막 index가 뽑힌다면?
+
+                # 그렇다면... 
+                # if start_idx = unique rule arr num - 1
+                # total rule arr num - start_idx
+
+                # 지금 로직이 조금 틀린 것 같다.
+  
+
+                local range=$(( $end_idx - $start_idx ))
+
+                for (( i=$start_idx; i<$end_idx; i++ ))
+                do
+                    # echo -e "${ruleArrR[$i]}"
+                    ruleArrR+=("${ruleArr[$i]}")
+                    contArrR+=("${contArr[$i]}")
+                    ansArrR+=("${ansArr[$i]}")
+                    limitArrR+=("${limitArr[$i]}")
+                    completeArrR+=("${completeArr[$i]}")
+                    msgArrR+=("${msgArr[$i]}")
+                done
+            done
+        }
+    else
+        declare -n ruleArrR=ruleArr
+        declare -n contArrR=contArr
+        declare -n ansArrR=ansArr
+        declare -n limitArrR=limitArr
+        declare -n completeArrR=completeArr
+        declare -n msgArrR=msgArr
+
+    fi
+
     for (( i=0; i<${#ruleArrR[@]}; i++ ))
     do
 
@@ -286,9 +461,9 @@ REPEAT
             log "[startValueReminder] current dialog pass stat : ------------------------false------------------------"
             apple_dialog_text "$contents"
             log "[startValueReminder] parsed button from user : $ans"
-            log "[startValueReminder] parsed answer from user : $msg"
+            log "[startValueReminder] parsed answer from user : $userTxtMsg"
 
-            if [ "$ans" = "Back" ]
+            if [ "$ans" = "$btnBack" ]
             then
                 log "[startValueReminder] button stat------------------------pressBack------------------------"
                 i=$(( i-2 ))
@@ -297,43 +472,40 @@ REPEAT
                     i=-1
                 fi
                 continue
-            fi
+            elif [ "$ans" = "tgg" ]
+            then 
+                toggleImg
+                i=$(( i-1 ))
+            fi     
 
-            # if [ ${limitArrR[$i]} = " " ]
-            # then
-            #     limit=0
-            # else
-            #     limit=${limitArrR[$i]}
-            # fi        
-
-            while [ \( "$correctRes" != " " -a "${msg^^}" != "${correctRes^^}" \) -o \( "$correctRes" = " " -a ${#msg} -lt ${limit} \) ]
-            # while [ "$ans" = "No" -o ${#msg} -lt ${limit} -o "$msg" != "$correctRes" ]
+            while [ \( "$correctRes" != " " -a "${userTxtMsg^^}" != "${correctRes^^}" \) -o \( "$correctRes" = " " -a ${#userTxtMsg} -lt ${limit} \) ]
+            # while [ "$ans" = "No" -o ${#userTxtMsg} -lt ${limit} -o "$userTxtMsg" != "$correctRes" ]
             do
                     alrt=""
-                    if [ "$correctRes" != " " -a "${msg^^}" != "${correctRes^^}" ]
+                    if [ "$correctRes" != " " -a "${userTxtMsg^^}" != "${correctRes^^}" ]
                     then
                         log "[startValueReminder] while loop stat : 글자가 틀렸다."
-                        log "[startValueReminder] while loop stat : 입력한 글자 : ${msg^^}"
+                        log "[startValueReminder] while loop stat : 입력한 글자 : ${userTxtMsg^^}"
                         log "[startValueReminder] while loop stat : 입력해야 하는 글자 : /$correctRes/"
-                        alrt="YOU ENTERED <$msg>\nPLEASE ENTER <$correctRes>.\n"
+                        alrt="YOU ENTERED <$userTxtMsg>\nPLEASE ENTER <$correctRes>.\n"
 
                         # log "[startValueReminder] while loop stat : false : $cond1"
                     # fi
-                    elif [ "$correctRes" = " " -a ${#msg} -lt ${limit} ]
+                    elif [ "$correctRes" = " " -a ${#userTxtMsg} -lt ${limit} ]
                     then
                         log "[startValueReminder] while loop stat : 글자 수 미달"
-                        log "[startValueReminder] while loop stat : ${#msg}"
+                        log "[startValueReminder] while loop stat : ${#userTxtMsg}"
                         log "[startValueReminder] while loop stat : ${limit}"
                         log "[startValueReminder] while loop stat : false : $cond2"
-                        alrt="YOU ENTERED <$msg>\nPLEASE ENTER MORE THAN $limit CHARS.\n"
+                        alrt="YOU ENTERED <$userTxtMsg>\nPLEASE ENTER MORE THAN $limit CHARS.\n"
                     fi
                     ans=""
-                    msg=""
+                    userTxtMsg=""
 
 
-                    # alertUpdate $msg $limit
+                    # alertUpdate $userTxtMsg $limit
                     apple_dialog_text "${alrt}${warn}${ruleArrR[${i}]}\n\nType$correctRes"
-                    if [ "$ans" = "Back" ]
+                    if [ "$ans" = "$btnBack" ]
                     then
                         log "[startValueReminder] button stat : ------------------------pressBack------------------------"
                         i=$(( i-2 ))
@@ -345,6 +517,10 @@ REPEAT
                         backFlag=1
 
                         break
+                    elif [ "$ans" = "tgg" ]
+                    then 
+                        toggleImg
+                        i=$(( i-1 ))
                     fi
             done
 
@@ -353,12 +529,12 @@ REPEAT
                 completeArrR[$i]="true"
                 log "[startValueReminder] current dialog stat : ------------------------complete ${i}!------------------------"
                 log "[startValueReminder] dialog stat update: ${completeArrR[@]}"
-                msgArrR[$i]=$msg
+                msgArrR[$i]=$userTxtMsg
             fi
 
             # if [ -z $debug ]
             # then
-            record $msg
+            record $userTxtMsg
             # fi
         else # if already submit answers to God.
             log "[startValueReminder] current dialog stat : ------------------------true : show mode------------------------"
@@ -372,7 +548,7 @@ REPEAT
                 apple_dialog_show "$contents"
             fi
 
-            if [ "$ans" = "Back" ]
+            if [ "$ans" = "$btnBack" ]
             then
                 log "[startValueReminder] current button stat : ------------------------pressBack------------------------"
                 i=$(( i-2 ))
@@ -380,52 +556,23 @@ REPEAT
                 then
                     i=-1
                 fi
+            elif [ "$ans" = "tgg" ]
+            then 
+                toggleImg
+                i=$(( i-1 ))
             else # when press Next
                 log "[startValueReminder] current button stat : ------------------------pressNext------------------------"
                 continue
             fi
 
         fi
-        
-<< "COMP"
-        for i = 1 to allArr.len
-            if comArr[i] = false # 여기 seg fault 안뜰까? ㅋㅋ
-                apple_dialog text contents
 
-                while ans = no or msg = false or msgLen < limit
-                    applie_dialog text contents
-
-                    if ans = back
-                        i--
-                        break
-        else
-            aple_dialog show contents
-COMP
         
 
 
 
-
-<< "PSEUDO"
- while (ans[i] != " " -a msg != ans[i]) -o (ans[i] = " " -a limit > #msg)
-        repeat
-
-질문의 종류 3가지
-입력해야 하는 문구를 정확히 입력해야 한다.
-내용을 입력해야 하되, 정해진 글자 수를 넘어야 한다
-그냥 버튼만 누르면 된다.
-
-각 경우에 따라 조건을 만족하지 않으면 같은 화면이 반복되어서 출력
-버튼을 No을 누르거나, 입력해야 하는 문구가 있을 때 틀렸거나, 입력해야 하는 문구는 없어서 자유롭게 입력할 수 있는데 글자 수를 채우지 못했을 때
-반복!
-
-여기에 msg가 대문자이든 소문자이든 맞도록 하기 위해서 입력받은 문구를 대문자로 변환
-msg^^
-
-PSEUDO
-
-    # cond1="$correctRes" != " " -a "${msg^^}" != "$correctRes"
-    # cond2="$correctRes" = " " -a ${#msg} -lt ${limit}
+    # cond1="$correctRes" != " " -a "${userTxtMsg^^}" != "$correctRes"
+    # cond2="$correctRes" = " " -a ${#userTxtMsg} -lt ${limit}
 
 
     done
@@ -436,11 +583,13 @@ PSEUDO
 
 
 
-    # record "ARE YOU OBSESSED? ${msg}"
+    # record "ARE YOU OBSESSED? ${userTxtMsg}"
 
-    local pids=$(pgrep Preview)
+    # local pids=$(pgrep Preview)
 
-    closePreview $pids
+    # closePreview $pids
+    sleep 1
+    closePreview
     
 
 }

@@ -3,17 +3,26 @@
 
 
 
+source dir.sh
 
-baseSecArg=$1
-if [ -z $baseSecArg ]
-then
-	baseSec=4500
-elif [[ ! $baseSecArg =~ ^[0-9]*$ ]]; then 
-    echo -e "usage : iterator_up.sh <minutes>\n\tminutes here is the base minutes. \n\tThe shell adds random minutes 1/4 of the base minutes"
-    exit 0
-else
-    baseSec=$baseSecArg
-fi
+source parseArg.sh
+# output argument : debug, dFunc, arg_file, dFile, log, base_sec_arg, is_rnd_arg, rnd_option
+scrpt_name=$0
+args=($@)
+
+parseArg "$scrpt_name" "${args[@]}"
+
+
+# if [ -z $base_sec_arg ]
+# then
+# 	baseSec=4500
+# elif [[ ! $base_sec_arg =~ ^[0-9]*$ ]]; then 
+#     echo -e "usage : iterator_up.sh <seconds>\n\tseconds here is the base seconds. \n\tThe shell adds random seconds 1/4 of the base seconds"
+#     exit 0
+# else
+#     baseSec=$base_sec_arg
+# fi
+
 
 while [ 1 ]
 do
@@ -38,7 +47,7 @@ do
     sec=$(( $limitT - $hours * 3600 - $mins * 60 ))
 
     echo $hours:$mins:$sec left
-    (osascript -e "display notification \"$hours:$mins:$sec left\" with title \"Code Repent Gradient\" subtitle \"glob arg max U s.t. U(G)\" sound name \"Frog\"")
+    (osascript -e "display notification \"$hours:$mins:$sec left\" with title \"Code Repent Gradient\" subtitle \"glob arg max U s.t. U(G)\" ")
 
     if [ $limitT -gt 3600 ]
     then
@@ -68,7 +77,7 @@ do
             echo leftOver : $leftOver limitT : $limitT
             sleep $leftOver
             echo ${arr[$i]} mins left.
-            (osascript -e "display notification \"${arr[$i]} mins left\" with title \"Code Repent Gradient\" subtitle \"glob arg max U s.t. U(G)\" sound name \"Frog\"")
+            (osascript -e "display notification \"${arr[$i]} mins left\" with title \"Code Repent Gradient\" subtitle \"glob arg max U s.t. U(G)\" ")
 
             limitT=$(( $limitT - $leftOver ))
         fi
@@ -84,12 +93,12 @@ do
             leftOver=$(( $limitT - ${arr[$i]} ))
             sleep $leftOver
             echo ${arr[$i]} secs left.
-            (osascript -e "display notification \"${arr[$i]} secs left\" with title \"Code Repent Gradient\" subtitle \"glob arg max U s.t. U(G)\" sound name \"Frog\"")
+            (osascript -e "display notification \"${arr[$i]} secs left\" with title \"Code Repent Gradient\" subtitle \"glob arg max U s.t. U(G)\" ")
             limitT=$(( $limitT - $leftOver ))
         fi
     done   
     # ./main.sh -l -f test_short.txt;   
-    ./main.sh -f rules_up_only_kor.txt;   
+    ./main.sh "$debug" "$dFunc" "$arg_file" "$dFile" "$log" "$is_rnd_arg" "$rnd_option";   
 
-    echo one is done!
+    echo -e "one is done!\n\n"
 done
