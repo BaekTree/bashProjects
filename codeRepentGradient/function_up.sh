@@ -241,6 +241,22 @@ startValueReminder(){
     updateImgList
     log "[startValueReminder] ${numV} verses exist."
 
+<< "GATE"
+open the gate with a dialog
+GATE
+
+    apple_dialog_show "--------------------------------------------------------------
+Code Repent Gradient : 마음을 돌이켜 하나님에게로 돌아가자.
+
+Max glob arg_me U(G, me) s.t. U(me) <= U(G)
+
+하나님에게 돌아가는 시간.
+
+하나님에게로 돌아가 안식을 누리세요.
+
+하나님이 가장 중요해요.
+--------------------------------------------------------------
+Welcome Back to Code Repent Gradient!\n$warn" "single"
 
     modeSelection
 
@@ -279,22 +295,6 @@ startValueReminder(){
 
 
 
-<< "GATE"
-open the gate with a dialog
-GATE
-
-    apple_dialog_show "--------------------------------------------------------------
-Code Repent Gradient : 마음을 돌이켜 하나님에게로 돌아가자.
-
-Max glob arg_me U(G, me) s.t. U(me) <= U(G)
-
-하나님에게 돌아가는 시간.
-
-하나님에게로 돌아가 안식을 누리세요.
-
-하나님이 가장 중요해요.
---------------------------------------------------------------
-Welcome Back to Code Repent Gradient!\n$warn" "single"
 
     apple_dialog_show "$rules" "single"
     # while [ "$ans" = "No" ]
