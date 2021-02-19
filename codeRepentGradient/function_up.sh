@@ -236,10 +236,126 @@ startImgNav(){
     done
 }
 
+declare -n ruleArrR=ruleArr
+declare -n contArrR=contArr
+declare -n ansArrR=ansArr
+declare -n limitArrR=limitArr
+declare -n completeArrR=completeArr
+declare -n msgArrR=msgArr
+
+randomize(){
+    local -a ruleArrRnd=()
+    local -a contArrRnd=()
+    local -a ansArrRnd=()
+    local -a limitArrRnd=()
+    local -a completeArrRnd=()
+    local -a msgArrRnd=()
+        # local randRuleIdx=$(( $RANDOM % $ruleNum ))
+        # local i = ${uniqueRuleIdxArr[$randRuleIdx]}
+
+    local fixRuleNum=$rnd_first_arg
+    local numRandPick=$rnd_second_arg
+
+
+    local ruleNum=${#uniqueRuleIdxArr[@]}
+    local -a selectedRuleArr=()
+    for (( s_i=0; s_i<$fixRuleNum; s_i++ ))
+    do
+        selectedRuleArr+=(${s_i})
+    done
+
+
+    if [ $(( $fixRuleNum + $numRandPick )) -gt $ruleNum ]
+    then
+        echo "$(( $fixRuleNum + $numRandPick ))"
+        echo $ruleNum
+        echo "the number of first fixed value + the number of randomly picking values > the number of total values."
+        exit 0
+    fi
+
+    local select_i=0
+    
+    while [[ $select_i < $numRandPick ]]
+    do
+        local randRuleIdx=$(( $RANDOM % $(($ruleNum - $fixRuleNum)) ))
+        # echo $randRuleIdx
+        selectedRuleArr+=($(($randRuleIdx + $fixRuleNum)))
+        
+
+        # echo $idx
+        select_i=$(( select_i + 1 ))
+    done
+
+    # for (( s_i=0; s_i<${#uniqueRuleIdxArr[@]}; s_i++ ))
+    # do
+    #     echo ${uniqueRuleIdxArr[$s_i]}
+    # done
+
+    # selectedRuleArr+=($(( ${#uniqueRuleIdxArr[@]} - 1 )))
+    # echo "uniqueRuleIdxArr의 마지막 값 : ${uniqueRuleIdxArr[$(( ${#uniqueRuleIdxArr[@]} - 1 ))]}"
+    # echo 
+
+    for (( select_i=0; select_i<${#selectedRuleArr[@]}; select_i++ ))
+    do
+        local uniqRuleIdx=${selectedRuleArr[$select_i]}
+        local start_idx=${uniqueRuleIdxArr[$uniqRuleIdx]}
+        local end_idx=${uniqueRuleIdxArr[$(($uniqRuleIdx+1))]}
+            # echo "uniq rule idx : $uniqRuleIdx"
+            # echo "start idx : $start_idx"
+            # echo "end idx : $end_idx"
+        if [ $start_idx -eq ${uniqueRuleIdxArr[$(( ${#uniqueRuleIdxArr[@]} - 1 ))]} ]
+        then
+            end_idx=$(( ${#ruleArr[@]} - 1 ))
+            # echo $start_idx
+            # echo $end_idx
+            # exit 0
+
+
+        fi
+        # 전체 ruleArr의 마지막 index가 뽑힌다면?
+
+        # 그렇다면... 
+        # if start_idx = unique rule arr num - 1
+        # total rule arr num - start_idx
+
+        # 지금 로직이 조금 틀린 것 같다.
+
+
+        local range=$(( $end_idx - $start_idx ))
+
+        for (( i=$start_idx; i<$end_idx; i++ ))
+        do
+            # echo -e "${ruleArrR[$i]}"
+            ruleArrRnd+=("${ruleArr[$i]}")
+            contArrRnd+=("${contArr[$i]}")
+            ansArrRnd+=("${ansArr[$i]}")
+            limitArrRnd+=("${limitArr[$i]}")
+            completeArrRnd+=("${completeArr[$i]}")
+            msgArrRnd+=("${msgArr[$i]}")
+        done
+    done
+    priorIFS=$IFS
+    IFS=$'\n'
+    ruleArrR=("${ruleArrRnd[@]}")
+    contArrR=("${contArrRnd[@]}")
+    ansArrR=("${ansArrRnd[@]}")
+    limitArrR=("${limitArrRnd[@]}")
+    completeArrR=("${completeArrRnd[@]}")
+    msgArrR=("${msgArrRnd[@]}")
+
+    log "randomize done."
+    IFS=$priorIFS
+}
 
 startValueReminder(){
     updateImgList
     log "[startValueReminder] ${numV} verses exist."
+
+
+    if [[ ! -z $is_rnd_arg ]] && [[ $is_rnd_arg == "-r" ]]
+    then
+            randomize
+    fi
 
 << "GATE"
 open the gate with a dialog
@@ -303,9 +419,7 @@ Welcome Back to Code Repent Gradient!\n$warn" "single"
     # done
 
     # exit 0
-<< "REPEAT"
 
-REPEAT
 
     # append time and userTxtMsg
     record "\n\n\n\n\n\n\n$(date +%a) $(date +%b) $(date +%d) $(date +"%H:%M") $(date +%Y) "
@@ -314,109 +428,7 @@ REPEAT
     log "[startValueReminder] the number of rules : ${#ruleArr[@]}"
     
 
-    if [[ ! -z $is_rnd_arg ]] && [[ $is_rnd_arg == "-r" ]]
-    then
-        {
-            local -a ruleArrR=()
-            local -a contArrR=()
-            local -a ansArrR=()
-            local -a limitArrR=()
-            local -a completeArrR=()
-            local -a msgArrR=()
-                # local randRuleIdx=$(( $RANDOM % $ruleNum ))
-                # local i = ${uniqueRuleIdxArr[$randRuleIdx]}
 
-            local fixRuleNum=$rnd_first_arg
-            local numRandPick=$rnd_second_arg
-
-
-            local ruleNum=${#uniqueRuleIdxArr[@]}
-            local -a selectedRuleArr=()
-            for (( s_i=0; s_i<$fixRuleNum; s_i++ ))
-            do
-                selectedRuleArr+=(${s_i})
-            done
-
-
-            if [ $(( $fixRuleNum + $numRandPick )) -gt $ruleNum ]
-            then
-                echo "$(( $fixRuleNum + $numRandPick ))"
-                echo $ruleNum
-                echo "the number of first fixed value + the number of randomly picking values > the number of total values."
-                exit 0
-            fi
-
-            local select_i=0
-            
-            while [[ $select_i < $numRandPick ]]
-            do
-                local randRuleIdx=$(( $RANDOM % $(($ruleNum - $fixRuleNum)) ))
-                # echo $randRuleIdx
-                selectedRuleArr+=($(($randRuleIdx + $fixRuleNum)))
-                
-
-                # echo $idx
-                select_i=$(( select_i + 1 ))
-            done
-
-            # for (( s_i=0; s_i<${#uniqueRuleIdxArr[@]}; s_i++ ))
-            # do
-            #     echo ${uniqueRuleIdxArr[$s_i]}
-            # done
-
-            # selectedRuleArr+=($(( ${#uniqueRuleIdxArr[@]} - 1 )))
-            # echo "uniqueRuleIdxArr의 마지막 값 : ${uniqueRuleIdxArr[$(( ${#uniqueRuleIdxArr[@]} - 1 ))]}"
-            # echo 
-
-            for (( select_i=0; select_i<${#selectedRuleArr[@]}; select_i++ ))
-            do
-                local uniqRuleIdx=${selectedRuleArr[$select_i]}
-                local start_idx=${uniqueRuleIdxArr[$uniqRuleIdx]}
-                local end_idx=${uniqueRuleIdxArr[$(($uniqRuleIdx+1))]}
-                    # echo "uniq rule idx : $uniqRuleIdx"
-                    # echo "start idx : $start_idx"
-                    # echo "end idx : $end_idx"
-                if [ $start_idx -eq ${uniqueRuleIdxArr[$(( ${#uniqueRuleIdxArr[@]} - 1 ))]} ]
-                then
-                    end_idx=$(( ${#ruleArr[@]} - 1 ))
-                    # echo $start_idx
-                    # echo $end_idx
-                    # exit 0
-
-
-                fi
-                # 전체 ruleArr의 마지막 index가 뽑힌다면?
-
-                # 그렇다면... 
-                # if start_idx = unique rule arr num - 1
-                # total rule arr num - start_idx
-
-                # 지금 로직이 조금 틀린 것 같다.
-  
-
-                local range=$(( $end_idx - $start_idx ))
-
-                for (( i=$start_idx; i<$end_idx; i++ ))
-                do
-                    # echo -e "${ruleArrR[$i]}"
-                    ruleArrR+=("${ruleArr[$i]}")
-                    contArrR+=("${contArr[$i]}")
-                    ansArrR+=("${ansArr[$i]}")
-                    limitArrR+=("${limitArr[$i]}")
-                    completeArrR+=("${completeArr[$i]}")
-                    msgArrR+=("${msgArr[$i]}")
-                done
-            done
-        }
-    else
-        declare -n ruleArrR=ruleArr
-        declare -n contArrR=contArr
-        declare -n ansArrR=ansArr
-        declare -n limitArrR=limitArr
-        declare -n completeArrR=completeArr
-        declare -n msgArrR=msgArr
-
-    fi
 
     for (( i=0; i<${#ruleArrR[@]}; i++ ))
     do
