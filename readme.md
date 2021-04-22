@@ -8,7 +8,8 @@
 ## valueReminder.sh
 * remind your goal and purpose
 * too much obsessed while working? forget your faith?
-* This bash script hides all application and show value reminder dialog.
+* This bash script hides all applications and show value reminder dialog in macOS
+* use bash 4
 * module
   * startReminder
   * getValueFunc
