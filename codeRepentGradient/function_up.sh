@@ -111,7 +111,7 @@ apple_dialog_text(){
 modeSelection(){
 
 
-    local btn_txt="buttons {\"txtWimg\", \"Img\"}"
+    local btn_txt="buttons {\"txtWimg\", \"Img\", default button \"Next\" }"
 
 
 
