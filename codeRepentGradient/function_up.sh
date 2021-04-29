@@ -111,14 +111,14 @@ apple_dialog_text(){
 modeSelection(){
 
 
-    local btn_txt="buttons {\"txtWimg\", \"Img\", default button \"Next\" }"
+    local btn_txt="buttons {\"txtWimg\", \"Img\" }"
 
 
 
 
 
     # res=$(osascript -e "display dialog \"$1\" with title \"Code Repent Gradient\" $btn_txt default button \"Next\"")
-    res=$(osascript -e "display dialog \"mode selection\" with title \"Code Repent Gradient\" $btn_txt ")
+    res=$(osascript -e "display dialog \"mode selection\" with title \"Code Repent Gradient\" $btn_txt default button \"Img\"")
 
     parseBtnAns "$res"   
 }
